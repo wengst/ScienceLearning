@@ -18,6 +18,24 @@ namespace LearnLibs
         #endregion
 
         #region private motheds
+        static T getAttribute<T>(Type type) where T : Attribute
+        {
+            if (type == null) return null;
+            object[] attrs = type.GetCustomAttributes(typeof(T), true);
+            if (attrs != null && attrs.Length > 0) {
+                return attrs[0] as T;
+            }
+            return null;
+        }
+        static T getAttribute<T>(PropertyInfo p) where T : Attribute {
+            if (p == null) return null;
+            object[] attrs = p.GetCustomAttributes(typeof(T), true);
+            if (attrs != null && attrs.Length > 0) {
+                return attrs[0] as T;
+            }
+            return null;
+        }
+        
         static bool isBaseModel(Type t)
         {
             if (t == null) return false;
