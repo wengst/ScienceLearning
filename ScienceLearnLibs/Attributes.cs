@@ -264,6 +264,9 @@ namespace LearnLibs
     [AttributeUsage(AttributeTargets.Property)]
     public class ForeignKeyAttribute : Attribute
     {
+        /*
+         *外键特性既外键约束。表中字段值来自于其他表对应字段的值。
+         */
         #region private fields
         string _name = "foreignKey1";
         string _qdStr = "foreignKey_";
