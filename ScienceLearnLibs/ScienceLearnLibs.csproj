@@ -7,7 +7,7 @@
     <ProjectGuid>{1A900F76-3998-446E-8DF2-17FF05D9072B}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LearnLibs</RootNamespace>
+    <RootNamespace>ScienceLearnLibs</RootNamespace>
     <AssemblyName>ScienceLearnLibs</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -32,16 +32,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Data.SQLite">
-      <HintPath>..\..\..\Learning\LearnLibs2\bin\Debug\System.Data.SQLite.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.EF6">
-      <HintPath>..\..\..\Learning\LearnLibs2\bin\Debug\System.Data.SQLite.EF6.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Data.SQLite.Linq">
-      <HintPath>..\..\..\Learning\LearnLibs2\bin\Debug\System.Data.SQLite.Linq.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -49,55 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes.cs" />
-    <Compile Include="BaseModel.cs" />
-    <Compile Include="Consts.cs" />
-    <Compile Include="Controls\FormDialog.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="Controls\FormDialog.Designer.cs" />
-    <Compile Include="Controls\LabelControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Controls\LabelControl.Designer.cs" />
-    <Compile Include="Controls\LB.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Controls\LB.Designer.cs" />
-    <Compile Include="Controls\LCB.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Controls\LCB.Designer.cs" />
-    <Compile Include="Controls\LDT.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Controls\LDT.Designer.cs" />
-    <Compile Include="Controls\LTB.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Controls\LTB.Designer.cs" />
-    <Compile Include="Controls\SelectRoles.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="Controls\SelectRoles.Designer.cs" />
-    <Compile Include="Enums.cs" />
-    <Compile Include="Exceptions.cs" />
-    <Compile Include="Functions.cs" />
-    <Compile Include="ModelDb.cs" />
-    <Compile Include="ModelDbSet.cs" />
-    <Compile Include="Models.cs" />
+    <Compile Include="Class1.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SelectExpression.cs" />
-  </ItemGroup>
-  <ItemGroup />
-  <ItemGroup>
-    <EmbeddedResource Include="Controls\FormDialog.resx" />
-    <EmbeddedResource Include="Controls\LabelControl.resx" />
-    <EmbeddedResource Include="Controls\LB.resx" />
-    <EmbeddedResource Include="Controls\LCB.resx" />
-    <EmbeddedResource Include="Controls\LDT.resx" />
-    <EmbeddedResource Include="Controls\LTB.resx" />
-    <EmbeddedResource Include="Controls\SelectRoles.resx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
