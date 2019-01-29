@@ -32,6 +32,16 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data.SQLite">
+      <HintPath>..\..\..\Learning\LearnLibs2\bin\Debug\System.Data.SQLite.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SQLite.EF6">
+      <HintPath>..\..\..\Learning\LearnLibs2\bin\Debug\System.Data.SQLite.EF6.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data.SQLite.Linq">
+      <HintPath>..\..\..\Learning\LearnLibs2\bin\Debug\System.Data.SQLite.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -39,8 +49,40 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Attributes.cs" />
+    <Compile Include="BaseModel.cs" />
+    <Compile Include="Consts.cs" />
+    <Compile Include="Controls\FormDialog.cs" />
+    <Compile Include="Controls\FormDialog.Designer.cs" />
+    <Compile Include="Controls\LabelControl.cs" />
+    <Compile Include="Controls\LabelControl.Designer.cs" />
+    <Compile Include="Controls\LB.cs" />
+    <Compile Include="Controls\LB.Designer.cs" />
+    <Compile Include="Controls\LCB.cs" />
+    <Compile Include="Controls\LCB.Designer.cs" />
+    <Compile Include="Controls\LDT.cs" />
+    <Compile Include="Controls\LDT.Designer.cs" />
+    <Compile Include="Controls\LTB.cs" />
+    <Compile Include="Controls\LTB.Designer.cs" />
+    <Compile Include="Controls\SelectRoles.cs" />
+    <Compile Include="Controls\SelectRoles.Designer.cs" />
+    <Compile Include="Enums.cs" />
+    <Compile Include="Exceptions.cs" />
+    <Compile Include="Functions.cs" />
+    <Compile Include="ModelDb.cs" />
+    <Compile Include="ModelDbSet.cs" />
+    <Compile Include="Models.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SelectExpression.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Controls\FormDialog.resx" />
+    <EmbeddedResource Include="Controls\LabelControl.resx" />
+    <EmbeddedResource Include="Controls\LB.resx" />
+    <EmbeddedResource Include="Controls\LCB.resx" />
+    <EmbeddedResource Include="Controls\LDT.resx" />
+    <EmbeddedResource Include="Controls\LTB.resx" />
+    <EmbeddedResource Include="Controls\SelectRoles.resx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
