@@ -7,5 +7,6 @@ namespace ScienceLearnLibs
 {
     public class Class1
     {
+
     }
 }
