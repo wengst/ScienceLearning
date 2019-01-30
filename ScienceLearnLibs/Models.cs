@@ -22,7 +22,7 @@ namespace LearnLibs.Models
         public string AccountPassword { get; set; }
 
         [DbColumn(FN.Role, DbType.Int32, IsAllowNull = false, Index = 3, DefaultValue = (int)UserRole.未知)]
-        [DisplayColumn("角色", 2, DisplayType = typeof(UserRole), Scenes = DisplayScenes.运营端)]
+        [DisplayColumn("角色", 2, FromType = typeof(UserRole), Scenes = DisplayScenes.运营端)]
         public UserRole Role { get; set; }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace LearnLibs.Models
         /// 地区代码
         /// </summary>
         [DbColumn(FN.CityId, DbType.AnsiStringFixedLength, 6, IsAllowNull = false, Index = 1)]
-        [ForeignKey(typeof(Area), FN.Id, FN.Name)]
+        [ForeignKey(typeof(Area), FN.Id)]
         public Guid CityId { get; set; }
 
         /// <summary>
@@ -79,7 +79,6 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.SchoolType, DbType.Int32, Index = 2, IsAllowNull = false, DefaultValue = (int)SchoolType.全日制学校)]
         [DisplayColumn("类别", 6, typeof(SchoolType))]
-        [ForeignKey(typeof(SchoolType))]
         public SchoolType SchoolType { get; set; }
 
         /// <summary>
@@ -136,7 +135,7 @@ namespace LearnLibs.Models
         /// 学校ID
         /// </summary>
         [DbColumn(FN.SchoolId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
-        [ForeignKey(typeof(School), FN.Id, FN.ShortName)]
+        [ForeignKey(typeof(School), FN.Id)]
         public Guid SchoolId { get; set; }
 
         /// <summary>
@@ -159,7 +158,6 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.SchoolType, DbType.Int32, Index = 4, IsAllowNull = false, DefaultValue = (int)SchoolType.全日制学校)]
         [DisplayColumn("类别", 6, typeof(SchoolType))]
-        [ForeignKey(typeof(SchoolType))]
         public SchoolType SchoolType { get; set; }
 
         /// <summary>
@@ -173,16 +171,14 @@ namespace LearnLibs.Models
         /// 开始年级
         /// </summary>
         [DbColumn(FN.Admission, DbType.Int32, Index = 6, IsAllowNull = false, DefaultValue = (int)SchoolGrades.七年级)]
-        [DisplayColumn("开始年级", 4, Scenes = DisplayScenes.运营端, DisplayType = typeof(SchoolGrades))]
-        [ForeignKey(typeof(SchoolGrades))]
+        [DisplayColumn("开始年级", 4, Scenes = DisplayScenes.运营端, FromType = typeof(SchoolGrades))]
         public SchoolGrades Admission { get; set; }
 
         /// <summary>
         /// 毕业年级
         /// </summary>
         [DbColumn(FN.Graduation, DbType.Int32, Index = 7, IsAllowNull = false, DefaultValue = (int)SchoolGrades.九年级)]
-        [DisplayColumn("毕业年级", 5, Scenes = DisplayScenes.运营端, DisplayType = typeof(SchoolGrades))]
-        [ForeignKey(typeof(SchoolGrades))]
+        [DisplayColumn("毕业年级", 5, Scenes = DisplayScenes.运营端, FromType = typeof(SchoolGrades))]
         public SchoolGrades Graduation { get; set; }
 
         public override void SetDataRow(ref DataRow r)
@@ -230,39 +226,39 @@ namespace LearnLibs.Models
         /// 省ID
         /// </summary>
         [DbColumn(FN.ProvinceId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
-        [ForeignKey(typeof(Area), FN.Id, FN.Name)]
-        [DisplayColumn("省", 1, DisplayType = typeof(Area), DisplayField = FN.Name, ValueField = FN.Id)]
+        [ForeignKey(typeof(Area), FN.Id)]
+        [DisplayColumn("省", 1, typeof(Area), FN.Name)]
         public Guid ProvinceId { get; set; }
 
         /// <summary>
         /// 市ID
         /// </summary>
         [DbColumn(FN.CityId, DbType.Guid, 16, Index = 2, IsAllowNull = false)]
-        [ForeignKey(typeof(Area), FN.Id, FN.Name)]
-        [DisplayColumn("市", 2, typeof(Area), FN.Name, ValueField = FN.Id)]
+        [ForeignKey(typeof(Area), FN.Id)]
+        [DisplayColumn("市", 2, typeof(Area), FN.Name)]
         public Guid CityId { get; set; }
 
         /// <summary>
         /// 区县ID
         /// </summary>
         [DbColumn(FN.DistrictId, DbType.Guid, 16, Index = 3, IsAllowNull = false)]
-        [ForeignKey(typeof(Area), FN.Id, FN.Name)]
-        [DisplayColumn("县", 3, typeof(Area), FN.Name, ValueField = FN.Id)]
+        [ForeignKey(typeof(Area), FN.Id)]
+        [DisplayColumn("县", 3, typeof(Area), FN.Name)]
         public Guid DistrictId { get; set; }
 
         /// <summary>
         /// 学校ID
         /// </summary>
         [DbColumn(FN.SchoolId, DbType.Guid, 16, Index = 4, IsAllowNull = false)]
-        [ForeignKey(typeof(School), FN.Id, FN.ShortName)]
-        [DisplayColumn("学校", 4, typeof(School), FN.ShortName, ValueField = FN.Id)]
+        [ForeignKey(typeof(School), FN.Id)]
+        [DisplayColumn("学校", 4, typeof(School), FN.ShortName)]
         public Guid SchoolId { get; set; }
 
         /// <summary>
         /// 班级ID
         /// </summary>
         [DbColumn(FN.SchoolClassId, DbType.Guid, 16, Index = 5, IsAllowNull = false)]
-        [ForeignKey(typeof(SchoolClass), FN.Id, FN.Alias)]
+        [ForeignKey(typeof(SchoolClass), FN.Id)]
         [DisplayColumn("班级", 5, typeof(SchoolClass), FN.Alias)]
         public Guid SchoolClassId { get; set; }
 
@@ -270,7 +266,7 @@ namespace LearnLibs.Models
         /// 用户ID
         /// </summary>
         [DbColumn(FN.UserId, DbType.Guid, 16, Index = 6, IsAllowNull = false)]
-        [ForeignKey(typeof(User), FN.Id, FN.Alias)]
+        [ForeignKey(typeof(User), FN.Id)]
         [DisplayColumn("用户", 6, typeof(User), FN.AccountName)]
         public Guid UserId { get; set; }
 
@@ -628,7 +624,7 @@ namespace LearnLibs.Models
         public string ShortName { get; set; }
 
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
-        [DisplayColumn("有效?", 3, DisplayType = typeof(bool))]
+        [DisplayColumn("有效?", 3, FromType = typeof(bool))]
         public bool IsValid { get; set; }
         public Press()
         {
@@ -688,7 +684,7 @@ namespace LearnLibs.Models
         /// 出版社Id
         /// </summary>
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
-        [ForeignKey(typeof(Press), FN.Id, FN.ShortName)]
+        [ForeignKey(typeof(Press), FN.Id)]
         public Guid PressId { get; set; }
 
         /// <summary>
@@ -710,16 +706,14 @@ namespace LearnLibs.Models
         /// 适合的年级
         /// </summary>
         [DbColumn(FN.SchoolGrade, DbType.Int32, Index = 4, IsAllowNull = false, DefaultValue = (int)SchoolGrades.七年级)]
-        [DisplayColumn("适应年级", 3, DisplayType = typeof(SchoolGrades))]
-        [ForeignKey(typeof(SchoolGrades))]
+        [DisplayColumn("适应年级", 3, FromType = typeof(SchoolGrades))]
         public SchoolGrades SchoolGrade { get; set; }
 
         /// <summary>
         /// 适应学期
         /// </summary>
         [DbColumn(FN.Semester, DbType.Int32, Index = 5, IsAllowNull = false, DefaultValue = (int)Semesters.第一学期)]
-        [DisplayColumn("适应学期", 4, DisplayType = typeof(Semesters))]
-        [ForeignKey(typeof(Semesters))]
+        [DisplayColumn("适应学期", 4, FromType = typeof(Semesters))]
         public Semesters Semester { get; set; }
 
         /// <summary>
@@ -733,8 +727,7 @@ namespace LearnLibs.Models
         /// 是否有效
         /// </summary>
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 7, IsAllowNull = false, DefaultValue = true)]
-        [DisplayColumn("实施中", 6, DisplayType = typeof(bool))]
-        [ForeignKey(typeof(bool))]
+        [DisplayColumn("实施中", 6, FromType = typeof(bool))]
         public bool IsValid { get; set; }
 
         public Category CreateNewCategory()
@@ -832,7 +825,7 @@ namespace LearnLibs.Models
         /// 是否有效
         /// </summary>
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 6, IsAllowNull = false)]
-        [DisplayColumn("有效", 3, DisplayType = typeof(bool))]
+        [DisplayColumn("有效", 3, FromType = typeof(bool))]
         public bool IsValid { get; set; }
 
         public Category CreateNewCategory()
@@ -976,7 +969,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.UserId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [DisplayColumn("提供者", 0, typeof(User), "Alias")]
-        [ForeignKey(typeof(User), FN.Id, FN.Alias)]
+        [ForeignKey(typeof(User), FN.Id)]
         public Guid UserId { get; set; }
 
         /// <summary>
@@ -1011,7 +1004,6 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.EditState, DbType.Int16, Index = 6, IsAllowNull = false, DefaultValue = (Int16)EditState.草稿)]
         [DisplayColumn("状态", 5, typeof(EditState))]
-        [ForeignKey(typeof(EditState))]
         public EditState EditState { get; set; }
 
         /// <summary>
@@ -1019,7 +1011,6 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ReleaseState, DbType.Int16, Index = 7, IsAllowNull = false, DefaultValue = (Int16)ReleaseState.未发布)]
         [DisplayColumn("发布", 6, typeof(ReleaseState))]
-        [ForeignKey(typeof(ReleaseState))]
         public ReleaseState ReleaseState { get; set; }
 
         /// <summary>
@@ -1086,7 +1077,6 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.AnswerMode, DbType.Int32, Index = 2, IsAllowNull = false, DefaultValue = (int)AnswerMode.选择)]
         [DisplayColumn("题型", 2, typeof(AnswerMode))]
-        [ForeignKey(typeof(AnswerMode))]
         public AnswerMode AnswerMode { get; set; }
 
         /// <summary>
@@ -1168,7 +1158,7 @@ namespace LearnLibs.Models
         /// 课标ID
         /// </summary>
         [DbColumn(FN.StandardId, DbType.Guid, 16, Index = 2, IsAllowNull = false)]
-        [ForeignKey(typeof(Standard), FN.Id, FN.Text)]
+        [ForeignKey(typeof(Standard), FN.Id)]
         [DisplayColumn("课标", 1, typeof(Standard), FN.Text)]
         public Guid StandardId { get; set; }
 

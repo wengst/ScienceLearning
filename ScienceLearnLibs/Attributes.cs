@@ -37,21 +37,34 @@ namespace LearnLibs
             this.Format = "";
             this.Index = 1;
             this.Scenes = DisplayScenes.运营端;
-            this.DisplayType = typeof(string);
-            this.Property = null;
-            FillWeight = 100;
-            this.ValueField = BaseModel.FN.Id;
+            this.FromType = typeof(string);
+            this.FillWeight = 100;
         }
         #endregion
+
         #region public properties
+        /// <summary>
+        /// 显示类型是否是枚举类型
+        /// </summary>
+        public bool IsEnum {
+            get {
+                if (FromType != null) {
+                    return FromType.IsEnum;
+                }
+                return false;
+            }
+        }
+
         /// <summary>
         /// 表格列标题文本
         /// </summary>
         public string HeaderText { get; set; }
+
         /// <summary>
         /// 单元格文本格式化字符串
         /// </summary>
         public string Format { get; set; }
+
         /// <summary>
         /// 列顺序(数字越小越靠左)
         /// </summary>
@@ -62,30 +75,33 @@ namespace LearnLibs
         /// <summary>
         /// 显示类型，如枚举,字符串
         /// </summary>
-        public Type DisplayType { get; set; }
-        public string DisplayField { get; set; }
-        public string ValueField { get; set; }
+        public Type FromType { get; set; }
+
         /// <summary>
-        /// 获取派生类属性，如果DisplayType是BaseModel的派生类，则Property表示派生类中的属性，否则为NULL
+        /// 显示内容的表字段
         /// </summary>
-        public PropertyInfo Property { get; private set; }
+        public string Field { get; set; }
+
         /// <summary>
         /// 表格列显示场景
         /// </summary>
         public Enums.DisplayScenes Scenes { get; set; }
         #endregion
 
+        #region 构造函数
         public DisplayColumnAttribute(string title)
         {
             init();
             this.HeaderText = title;
         }
+
         public DisplayColumnAttribute(string title, int index)
         {
             init();
             this.HeaderText = title;
             this.Index = index;
         }
+
         public DisplayColumnAttribute(string title, int index, string format)
         {
             init();
@@ -93,32 +109,23 @@ namespace LearnLibs
             this.Index = index;
             this.Format = format;
         }
-        public DisplayColumnAttribute(string title, int index, Type type)
-        {
+
+        public DisplayColumnAttribute(string title, int index, Type type) {
             init();
             this.HeaderText = title;
             this.Index = index;
-            if (BaseModel.IsSubclass(type))
-            {
-                throw new Exception("必须提供BaseModel派生类的属性");
-            }
-            else
-            {
-                this.DisplayType = type;
-            }
+            this.FromType = type;
         }
+
         public DisplayColumnAttribute(string title, int index, Type type, string fieldName)
         {
             init();
             this.HeaderText = title;
             this.Index = index;
-            this.DisplayType = type;
-            if (BaseModel.IsSubclass(type))
-            {
-                this.DisplayField = fieldName;
-                this.Property = F.GetProperty(type, fieldName);
-            }
-        }
+            this.FromType = type;
+            this.Field = fieldName;
+        } 
+        #endregion
     }
 
     public class TreeNodeColumnAttribute : Attribute
@@ -264,26 +271,19 @@ namespace LearnLibs
     [AttributeUsage(AttributeTargets.Property)]
     public class ForeignKeyAttribute : Attribute
     {
-        /*
-         *外键特性既外键约束。表中字段值来自于其他表对应字段的值。
-         */
-        #region private fields
-        string _name = "foreignKey1";
-        string _qdStr = "foreignKey_";
-        Type _modelType = null;
-        PropertyInfo _property = null;
-        #endregion
-
         #region public properties
-        public string Name { get { return _name; } }
+        /// <summary>
+        /// 外键名
+        /// </summary>
+        public string Name { get; internal set; }
         /// <summary>
         /// 获取外键特性的对应类型
         /// </summary>
-        public Type ModelType { get { return _modelType; } }
-
-        public string ValueField { get; set; }
-
-        public string DisplayField { get; set; }
+        public Type Type { get; internal set; }
+        /// <summary>
+        /// 外键表的值字段
+        /// </summary>
+        public string Field { get; set; }
         #endregion
 
         #region public methods
@@ -292,9 +292,9 @@ namespace LearnLibs
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public bool Equal(string name)
+        public bool Equal(ForeignKeyAttribute obj)
         {
-            return (_qdStr + name) == _name;
+            return obj.Name == this.Name;
         }
         #endregion
 
@@ -302,28 +302,12 @@ namespace LearnLibs
         /// 以BaseModel的派生类类型和属性名实例化外键特性
         /// </summary>
         /// <param name="type"></param>
-        /// <param name="valueField"></param>
-        public ForeignKeyAttribute(Type type, string valueField)
+        /// <param name="field"></param>
+        public ForeignKeyAttribute(Type type, string field)
         {
-            this._modelType = type;
-            this.ValueField = valueField;
-        }
-
-        public ForeignKeyAttribute(Type type, string valueField, string displayField)
-        {
-            this._modelType = type;
-            this.ValueField = valueField;
-            this.DisplayField = displayField;
-        }
-
-        /// <summary>
-        /// 以名称和类型实例化外键特性
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="type"></param>
-        public ForeignKeyAttribute(Type type)
-        {
-            this._modelType = type;
+            this.Type = type;
+            this.Field = field;
+            this.Name = field;
         }
     }
 

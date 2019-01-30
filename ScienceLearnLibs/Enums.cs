@@ -6,6 +6,11 @@ using System.ComponentModel;
 
 namespace LearnLibs.Enums
 {
+    public enum WhereTarget { 
+        SQLite,
+        SQLClient,
+        DataTable
+    }
     /// <summary>
     /// 分支学科
     /// </summary>

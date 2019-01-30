@@ -4,364 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
-using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
-using LearnLibs.Models;
-using LearnLibs.Enums;
 
 namespace LearnLibs
 {
-    #region
-    /// <summary>
-    /// 外键参数类型
-    /// </summary>
-    public class ForeignKeyArg
-    {
-        /// <summary>
-        /// 外键特性
-        /// </summary>
-        public ForeignKeyAttribute Key { get; private set; }
-        /// <summary>
-        /// 外键的值对象
-        /// </summary>
-        public object Value { get; private set; }
-
-        /// <summary>
-        /// 以外键类型和外键值对象初始化外键参数
-        /// <para>如果外键是枚举，则值对象必须可转换为对应枚举常量</para>
-        /// <para>如果外键是BaseModel的派生类，则值对象必须是内存数据行、派生类实例、数值类型、枚举、字符串类型之一</para>
-        /// </summary>
-        /// <param name="key"></param>
-        /// <param name="value"></param>
-        public ForeignKeyArg(ForeignKeyAttribute key, object value)
-        {
-            if (key == null) throw new ArgumentNullException("key");
-            if (value == null) throw new ArgumentNullException("value");
-            this.Key = key;
-            Type kt = key.ModelType;
-            Type vt = value.GetType();
-            if (kt.IsEnum)
-            {
-                if (kt != vt)
-                {
-                    if (vt.IsValueType || vt == typeof(string))
-                    {
-                        if (!Enum.IsDefined(kt, value))
-                        {
-                            throw new ArgumentException("外键是枚举类型，而值不在定义的枚举常量中");
-                        }
-                        else
-                        {
-                            this.Value = Enum.ToObject(kt, value);
-                        }
-                    }
-                    else
-                    {
-                        throw new InvalidOperationException("外键是枚举类型，而值的类型无法转化为枚举");
-                    }
-                }
-                else
-                {
-                    this.Value = value;
-                }
-            }
-            else if (BaseModel.IsSubclass(kt))
-            {
-                if (vt == typeof(DataRow))
-                {
-                    DataRow r = (DataRow)value;
-                    string mName = F.GetTableName(kt);
-                    if (r.Table.TableName != mName)
-                    {
-                        throw new ArgumentException("DataRow的表与外键类型所需的表不同");
-                    }
-                    else
-                    {
-                        this.Value = r;
-                    }
-                }
-                else if (vt == kt)
-                {
-                    PropertyInfo p = F.GetProperty(kt, key.DisplayField);
-                    if (p != null)
-                    {
-                        this.Value = p.GetValue(value, null);
-                    }
-                }
-                else if (vt.IsValueType || vt == typeof(string))
-                {
-                    this.Value = value;
-                }
-                else
-                {
-                    throw new ArgumentException("外键所需参数值的类型无效");
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 类型数据列类型
-    /// </summary>
-    public class ModelDbItem : IComparable, IComparable<ModelDbItem>
-    {
-        #region private fields
-        PropertyInfo _property = null;
-        DisplayColumnAttribute _displayCol = null;
-        DbColumnAttribute _col = null;
-        PrimaryKeyAttribute _primaryKey = null;
-        ForeignKeyAttribute _foreignKey = null;
-        UnqiueKeyAttribute _unqiueKey = null;
-        AutoIdentityAttribute _autoIdentity = null;
-        OrderByAttribute _orderBy = null;
-        TreeNodeColumnAttribute _treenodeColumn = null;
-        #endregion
-
-        #region private methods
-
-        #endregion
-
-        #region public properties
-        /// <summary>
-        /// 数据列关联的属性
-        /// </summary>
-        public PropertyInfo Property { get { return _property; } }
-
-        /// <summary>
-        /// 数据列
-        /// </summary>
-        public DbColumnAttribute Column { get { return _col; } }
-
-        /// <summary>
-        /// 字段名
-        /// </summary>
-        public string FieldName
-        {
-            get { return _col.FieldName; }
-        }
-
-        public string DisplayField {
-            get {
-                if (this.IsDisplayColumn && BaseModel.IsSubclass(DisplayColumn.DisplayType))
-                {
-                    return FieldName + "_" + DisplayColumn.DisplayField;
-                }
-                else {
-                    return FieldName;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 数据列的数据类型
-        /// </summary>
-        public DbType DataType { get { return _col.DataType; } }
-        /// <summary>
-        /// 数据列大小
-        /// </summary>
-        public int Size { get { return _col.Size; } }
-        /// <summary>
-        /// 用于SqlCommand参数的参数名
-        /// </summary>
-        public string ParameterName { get { return "@" + FieldName; } }
-        /// <summary>
-        /// 数据列的显示特性
-        /// </summary>
-        public DisplayColumnAttribute DisplayColumn { get { return _displayCol; } }
-        /// <summary>
-        /// 是否包含显示特性
-        /// </summary>
-        public bool IsDisplayColumn
-        {
-            get { return _displayCol != null; }
-        }
-        public PrimaryKeyAttribute PrimaryKey { get { return _primaryKey; } }
-        public bool IsPrimaryKey { get { return _primaryKey != null; } }
-        public ForeignKeyAttribute ForeignKey { get { return _foreignKey; } }
-        public bool IsForeignKey { get { return _foreignKey != null; } }
-        public AutoIdentityAttribute AutoIdentity { get { return _autoIdentity; } }
-        public bool IsAutoIdentity { get { return _autoIdentity != null; } }
-        public OrderByAttribute OrderBy { get { return _orderBy; } }
-        public bool IsOrderColumn { get { return _orderBy != null; } }
-        public TreeNodeColumnAttribute TreeNodeColumn
-        {
-            get { return _treenodeColumn; }
-        }
-        /// <summary>
-        /// 是否属于树形节点列
-        /// </summary>
-        public bool IsTreeNodeColumn
-        {
-            get { return _treenodeColumn != null; }
-        }
-        public UnqiueKeyAttribute UnqiueKey { get { return _unqiueKey; } }
-        public bool IsUnqiueKey { get { return _unqiueKey != null; } }
-        #endregion
-
-        #region public methods
-        public SQLiteParameter GetParameterByForeignKey(object obj)
-        {
-            if (obj == null) throw new ArgumentNullException("obj");
-            if (!IsForeignKey) throw new NotContainAttributeException(typeof(ForeignKeyAttribute));
-            Type t = obj.GetType();
-            SQLiteParameter parameter = null;
-            if (BaseModel.IsSubclass(t) && ForeignKey.ModelType == t)
-            {
-                parameter = new SQLiteParameter();
-                parameter.ParameterName = this.ParameterName;
-                parameter.DbType = DataType;
-                parameter.Size = this.Size;
-                parameter.Value = Property.GetValue(obj, null);
-            }
-            if (t == typeof(DataRow))
-            {
-                string name1 = F.GetTableName(_foreignKey.ModelType);
-                string name2 = ((DataRow)obj).Table.TableName;
-                if (name1 == name2)
-                {
-                    parameter = new SQLiteParameter();
-                    parameter.ParameterName = this.ParameterName;
-                    parameter.DbType = this.DataType;
-                    parameter.Size = this.Size;
-                    parameter.Value = ((DataRow)obj)[this.FieldName];
-                }
-            }
-            if (t.IsValueType || t == typeof(string))
-            {
-                parameter = new SQLiteParameter();
-                parameter.ParameterName = this.ParameterName;
-                parameter.DbType = this.DataType;
-                parameter.Size = this.Size;
-                parameter.Value = obj;
-            }
-            return parameter;
-        }
-
-        /// <summary>
-        /// 根据外键获取此数据列的Where条件表达式
-        /// </summary>
-        /// <param name="arg"></param>
-        /// <returns></returns>
-        public SelectExpression GetWhere(ForeignKeyArg arg)
-        {
-            if (arg == null) throw new ArgumentNullException("obj");
-            if (!IsForeignKey) throw new NotContainAttributeException(typeof(ForeignKeyAttribute));
-            SelectExpression SE = new SelectExpression();
-            if (F.IsDigital(this.DataType))
-            {
-                SE.DataTableWhere = SE.SQLiteWhere = this.FieldName + "=" + arg.Value.ToString();
-            }
-            else if (DataType != DbType.Guid)
-            {
-                SE.DataTableWhere = SE.SQLiteWhere = this.FieldName + "='" + arg.Value.ToString() + "'";
-            }
-            else
-            {
-                Guid guid = Guid.Empty;
-                if (Guid.TryParse(arg.Value.ToString(), out guid))
-                {
-                    SE.SQLiteWhere = "HEX(" + FieldName + ")='" + F.byteToHexStr(guid.ToByteArray()) + "'";
-                    SE.DataTableWhere = "Convert(" + FieldName + ",'System.String')='" + guid.ToString() + "'";
-                }
-                else
-                {
-                    SE.SQLiteWhere = "HEX(" + FieldName + ")='" + F.byteToHexStr(guid.ToByteArray()) + "'";
-                    SE.DataTableWhere = "Convert(" + FieldName + ",'System.String')='" + guid.ToString() + "'";
-                }
-            }
-            //Console.WriteLine(SE.DataTableWhere);
-            return SE;
-        }
-
-        /// <summary>
-        /// 获取该数据列的Order By表达式：FieldName ASC|DESC
-        /// </summary>
-        /// <returns></returns>
-        public string GetOrder()
-        {
-            string order = "";
-            if (IsOrderColumn)
-            {
-                if (this.OrderBy.OrderType != SortOrder.None)
-                {
-                    if (string.IsNullOrWhiteSpace(order))
-                    {
-                        order = this.FieldName + " " + (this.OrderBy.OrderType == SortOrder.Ascending ? "ASC" : "DESC");
-                    }
-                    else
-                    {
-                        order += "," + this.FieldName + " " + (this.OrderBy.OrderType == SortOrder.Ascending ? "ASC" : "DESC");
-                    }
-                }
-            }
-            return order;
-        }
-        #endregion
-
-        public ModelDbItem(PropertyInfo p)
-        {
-            if (p == null) throw new ArgumentNullException("p");
-            this._property = p;
-            object[] attrs = p.GetCustomAttributes(true);
-            if (attrs.Length > 0)
-            {
-                foreach (object attr in attrs)
-                {
-                    Type t = attr.GetType();
-                    if (t == typeof(DisplayColumnAttribute))
-                    {
-                        _displayCol = attr as DisplayColumnAttribute;
-                    }
-                    else if (t == typeof(DbColumnAttribute))
-                    {
-                        _col = attr as DbColumnAttribute;
-                    }
-                    else if (t == typeof(PrimaryKeyAttribute))
-                    {
-                        _primaryKey = attr as PrimaryKeyAttribute;
-                    }
-                    else if (t == typeof(ForeignKeyAttribute))
-                    {
-                        _foreignKey = attr as ForeignKeyAttribute;
-                    }
-                    else if (t == typeof(AutoIdentityAttribute))
-                    {
-                        _autoIdentity = attr as AutoIdentityAttribute;
-                    }
-                    else if (t == typeof(OrderByAttribute))
-                    {
-                        _orderBy = attr as OrderByAttribute;
-                    }
-                    else if (t == typeof(UnqiueKeyAttribute))
-                    {
-                        _unqiueKey = attr as UnqiueKeyAttribute;
-                    }
-                    else if (t == typeof(TreeNodeColumnAttribute))
-                    {
-                        _treenodeColumn = attr as TreeNodeColumnAttribute;
-                    }
-                }
-            }
-            if (_col == null)
-            {
-                throw new NotDbColumnAsPropertyException(p);
-            }
-        }
-
-        public int CompareTo(object obj)
-        {
-            int i1 = Column.Index;
-            int i2 = ((ModelDbItem)obj).Column.Index;
-            return i1 - i2;
-        }
-
-        public int CompareTo(ModelDbItem other)
-        {
-            return this.Column.Index - other.Column.Index;
-        }
-    }
-
     /// <summary>
     /// 模型数据操作类
     /// </summary>
@@ -369,7 +16,6 @@ namespace LearnLibs
     public class ModelDb
     {
         #region private fields
-        private Dictionary<string, ModelDb> pri_field_MDs = null;
         internal string pri_field_tableName = null;
         Type pri_field_type = null;
         internal PropertyInfo[] internal_field_Properties = null;
@@ -386,30 +32,10 @@ namespace LearnLibs
         DisplayScenes _currentScenes = DisplayScenes.未设置;
         List<ModelDbItem> dcols = null;
         List<string> JoinTables = new List<string>();
+        PropertyTableCollection _ptc = new PropertyTableCollection();
         #endregion
 
         #region private motheds
-        Dictionary<string, ModelDb> MDs
-        {
-            get
-            {
-                if (pri_field_MDs == null)
-                {
-                    pri_field_MDs = new Dictionary<string, ModelDb>();
-                    Assembly ass = Assembly.GetExecutingAssembly();
-                    Type[] types = ass.GetTypes();
-                    foreach (Type t in types)
-                    {
-                        if (BaseModel.IsSubclass(t))
-                        {
-                            pri_field_MDs.Add(t.Name, new ModelDb(t, Connection, GlobalDataSet));
-                        }
-                    }
-                }
-                return pri_field_MDs;
-            }
-        }
-
         /// <summary>
         /// 检查目前DataSet中是否存在某记录
         /// </summary>
@@ -426,28 +52,6 @@ namespace LearnLibs
                 return true;
             }
             return false;
-        }
-
-        void selectRows(string tableName, string where, string orderby = null)
-        {
-            if (string.IsNullOrWhiteSpace(tableName)) return;
-            string selectSql = "SELECT * FROM " + tableName;
-            if (!string.IsNullOrWhiteSpace(where))
-            {
-                selectSql += " WHERE " + where;
-            }
-            if (!string.IsNullOrWhiteSpace(orderby))
-            {
-                selectSql += " ORDER BY " + orderby;
-            }
-            if (string.IsNullOrWhiteSpace(selectSql)) return;
-            using (SQLiteCommand cmd = new SQLiteCommand(selectSql, Connection))
-            {
-                using (SQLiteDataAdapter sda = new SQLiteDataAdapter(cmd))
-                {
-                    sda.Fill(GlobalDataSet, tableName);
-                }
-            }
         }
 
         void selectRows(Type type, string where, string orderby = null)
@@ -528,48 +132,74 @@ namespace LearnLibs
             {
                 foreach (PropertyInfo p in internal_field_Properties)
                 {
-                    ModelDbItem item = new ModelDbItem(p);
-                    pri_field_items.Add(item);
-                    if (item.IsPrimaryKey)
+                    object[] attrs = p.GetCustomAttributes(true);
+                    ModelDbItem dbItem = new ModelDbItem();
+                    foreach (object a in attrs)
                     {
-                        if (_primaryKey == null)
+                        Type at = a.GetType();
+                        if (at == typeof(DbColumnAttribute))
                         {
-                            _primaryKey = new ModelPrimaryKey(item);
+                            dbItem._col = a as DbColumnAttribute;
                         }
-                        else
+                        else if (at == typeof(PrimaryKeyAttribute))
                         {
-                            if (_primaryKey.Name != item.PrimaryKey.Name)
-                            {
-                                throw new PrimaryKeyTooMuchException();
-                            }
-                            else
-                            {
-                                _primaryKey.Add(item);
-                            }
+                            dbItem._primaryKey = a as PrimaryKeyAttribute;
+                        }
+                        else if (at == typeof(DisplayColumnAttribute))
+                        {
+                            dbItem._displayCol = a as DisplayColumnAttribute;
+                        }
+                        else if (at == typeof(ForeignKeyAttribute))
+                        {
+                            dbItem._foreignKey = a as ForeignKeyAttribute;
+                        }
+                        else if (at == typeof(OrderByAttribute))
+                        {
+                            dbItem._orderBy = a as OrderByAttribute;
+                        }
+                        else if (at == typeof(UnqiueKeyAttribute))
+                        {
+                            dbItem._unqiueKey = a as UnqiueKeyAttribute;
+                        }
+                        else if (at == typeof(TreeNodeColumnAttribute))
+                        {
+                            dbItem._treenodeColumn = a as TreeNodeColumnAttribute;
+                        }
+                        else if (at == typeof(AutoIdentityAttribute))
+                        {
+                            dbItem._autoIdentity = a as AutoIdentityAttribute;
                         }
                     }
-                    if (item.IsAutoIdentity)
-                    {
-                        if (_autoIdentity == null) _autoIdentity = new ModelDbItem(p);
-                    }
-                    if (item.IsDisplayColumn)
-                    {
-                        if (_displayCols == null) _displayCols = new List<ModelDbItem>();
-                        _displayCols.Add(item);
-                    }
-                    if (item.IsForeignKey)
-                    {
-                        if (_foreignKeyCols == null) _foreignKeyCols = new List<ModelDbItem>();
-                        _foreignKeyCols.Add(item);
-                    }
-                    if (item.IsOrderColumn)
-                    {
-                        if (_orderByCols == null) _orderByCols = new List<ModelDbItem>();
-                        _orderByCols.Add(item);
-                    }
-                    if (item.IsUnqiueKey)
-                    {
-                        if (_unqiueKeys == null) { _unqiueKeys = new ModelUnqiueKeyCollection(item); } else { _unqiueKeys.Add(item); }
+                    if (dbItem.Column != null) {
+                        pri_field_items.Add(dbItem);
+                        if (dbItem.IsPrimaryKey) {
+                            if (_primaryKey == null) { _primaryKey = new ModelPrimaryKey(dbItem); }
+                            else { _primaryKey.Add(dbItem); }
+                        }
+                        if (dbItem.IsForeignKey) {
+                            if (_foreignKeyCols == null) { _foreignKeyCols = new List<ModelDbItem>(); }
+                            _foreignKeyCols.Add(dbItem);
+                        }
+                        if (dbItem.IsDisplayColumn) {
+                            if (_displayCols == null) _displayCols = new List<ModelDbItem>();
+                            _displayCols.Add(dbItem);
+                            if (BaseModel.IsSubclass(dbItem.DisplayColumn.FromType))
+                            {
+                                PropertyTable pt = new PropertyTable(dbItem.Property, this.TableName);
+                                _ptc.Add(pt); 
+                            }
+                        }
+                        if (dbItem.IsAutoIdentity) {
+                            _autoIdentity = dbItem;
+                        }
+                        if (dbItem.IsOrderColumn) {
+                            if (_orderByCols == null) _orderByCols = new List<ModelDbItem>();
+                            _orderByCols.Add(dbItem);
+                        }
+                        if (dbItem.IsUnqiueKey) {
+                            if (_unqiueKeys == null) { _unqiueKeys = new ModelUnqiueKeyCollection(dbItem); }
+                            else { _unqiueKeys.Add(dbItem); }
+                        }
                     }
                 }
             }
@@ -619,9 +249,9 @@ namespace LearnLibs
                     c.HeaderText = b.DisplayColumn.HeaderText;
                     c.FillWeight = b.DisplayColumn.FillWeight;
                     c.ReadOnly = true;
-                    if (BaseModel.IsSubclass(b.DisplayColumn.DisplayType))
+                    if (BaseModel.IsSubclass(b.DisplayColumn.FromType))
                     {
-                        c.DataPropertyName = b.FieldName + "_" + b.DisplayColumn.DisplayField;
+                        c.DataPropertyName = b.FieldName + "_" + b.DisplayColumn.Field;
                     }
                     else
                     {
@@ -650,7 +280,7 @@ namespace LearnLibs
                 //Console.WriteLine(dcols[e.ColumnIndex].DisplayColumn.HeaderText + "," + dcols[e.ColumnIndex].FieldName);
                 ModelDbItem dbCol = dcols[e.ColumnIndex];
                 DisplayColumnAttribute dspColAttr = dbCol.DisplayColumn;
-                Type displayType = dspColAttr.DisplayType;
+                Type displayType = dspColAttr.FromType;
                 if (displayType == typeof(bool))
                 {
                     bool b = false;
@@ -716,22 +346,22 @@ namespace LearnLibs
                 {
                     fields += "," + a + item.FieldName;
                 }
-                if (item.IsForeignKey && BaseModel.IsSubclass(item.ForeignKey.ModelType))
+                if (item.IsForeignKey && BaseModel.IsSubclass(item.ForeignKey.Type))
                 {
-                    if (item.DisplayColumn.DisplayType == item.ForeignKey.ModelType)
+                    if (item.DisplayColumn.FromType == item.ForeignKey.Type)
                     {
-                        ModelDb md = MDs[item.ForeignKey.ModelType.Name];
+                        ModelDb md = MDs[item.ForeignKey.Type.Name];
                         tables.Add(md.TableName);
-                        ta = item.FieldName + "_" + item.DisplayColumn.DisplayField;
+                        ta = item.FieldName + "_" + item.DisplayColumn.Field;
                         if (string.IsNullOrWhiteSpace(fields))
                         {
-                            fields = ta + "." + item.DisplayColumn.DisplayField;
+                            fields = ta + "." + item.DisplayColumn.Field;
                         }
                         else
                         {
-                            fields += "," + ta + "_" + md + "." + item.DisplayColumn.DisplayField;
+                            fields += "," + ta + "_" + md + "." + item.DisplayColumn.Field;
                         }
-                        string j = " LEFT JOIN " + md.TableName + " AS " + ta + " ON " + ta + "." + item.ForeignKey.ValueField + "=" + a + item.FieldName;
+                        string j = " LEFT JOIN " + md.TableName + " AS " + ta + " ON " + ta + "." + item.ForeignKey.Field + "=" + a + item.FieldName;
                         if (string.IsNullOrWhiteSpace(joins))
                         {
                             joins = j;
@@ -911,7 +541,7 @@ namespace LearnLibs
             if (this._foreignKeyCols == null || this._foreignKeyCols.Count == 0) return false;
             for (int i = 0; i < _foreignKeyCols.Count; i++)
             {
-                if (_foreignKeyCols[i].ForeignKey.ModelType == arg.Key.ModelType)
+                if (_foreignKeyCols[i].ForeignKey.Type == arg.Key.Type)
                 {
                     return true;
                 }
@@ -930,7 +560,7 @@ namespace LearnLibs
             if (this._foreignKeyCols == null || this._foreignKeyCols.Count == 0) return null;
             for (int i = 0; i < _foreignKeyCols.Count; i++)
             {
-                if (_foreignKeyCols[i].ForeignKey.ModelType == arg.Key.ModelType)
+                if (_foreignKeyCols[i].ForeignKey.Type == arg.Key.Type)
                 {
                     return _foreignKeyCols[i];
                 }
@@ -977,6 +607,9 @@ namespace LearnLibs
         #endregion
 
         #region public properties
+        public PropertyTableCollection PTC {
+            get { return _ptc; }
+        }
         public DisplayScenes CurrentScenes
         {
             get { return _currentScenes; }
@@ -1156,7 +789,7 @@ namespace LearnLibs
         {
             for (int i = 0; i < ForeignKeyColumns.Count; i++)
             {
-                if (ForeignKeyColumns[i].ForeignKey.ModelType == type)
+                if (ForeignKeyColumns[i].ForeignKey.Type == type)
                 {
                     return ForeignKeyColumns[i];
                 }
@@ -1246,7 +879,7 @@ namespace LearnLibs
                     if (arg == null) throw new ArgumentNullException("arg");
                     if (!IsConainForeignKey(arg))
                     {
-                        throw new Exception("此类型中的公共属性没有设置类型名为\"" + arg.Key.ModelType.Name + "\"的外键");
+                        throw new Exception("此类型中的公共属性没有设置类型名为\"" + arg.Key.Type.Name + "\"的外键");
                     }
                     ModelDbItem item = getForeignKey(arg);
                     SelectExpression se = item.GetWhere(arg);
@@ -1558,11 +1191,6 @@ namespace LearnLibs
             }
         }
 
-        public void RefreshGrid(List<ForeignKeyArg> args)
-        {
-            grid.DataSource = SelectByForeignKey(args);
-        }
-
         public bool CheckData(object obj)
         {
             return true;
@@ -1573,18 +1201,11 @@ namespace LearnLibs
         {
             if (BaseModel.IsSubclass(type))
             {
-                if (conn == null) throw new ArgumentNullException("conn");
-                if (globalDataSet == null) throw new ArgumentNullException("globalDataSet");
-                if (conn.State == ConnectionState.Closed) conn.Open();
-
-                this.Connection = conn;
-                this.GlobalDataSet = globalDataSet;
                 this.pri_field_type = type;
                 this.pri_field_tableName = F.GetTableName(this.pri_field_type);
                 this.internal_field_Properties = this.pri_field_type.GetProperties();
                 this._currentScenes = scenes;
                 buildItems();
-                buildJoinTables();
                 buildGridColumns();
             }
             else
@@ -1598,11 +1219,11 @@ namespace LearnLibs
             JoinTables.Add(TableName);
             foreach (ModelDbItem item in Columns)
             {
-                if (item.IsDisplayColumn && BaseModel.IsSubclass(item.DisplayColumn.DisplayType))
+                if (item.IsDisplayColumn && BaseModel.IsSubclass(item.DisplayColumn.FromType))
                 {
-                    if (item.IsForeignKey && item.ForeignKey.ModelType == item.DisplayColumn.DisplayType)
+                    if (item.IsForeignKey && item.ForeignKey.Type == item.DisplayColumn.FromType)
                     {
-                        ModelDb md = MDs[item.DisplayColumn.DisplayType.Name];
+                        ModelDb md = MDs[item.DisplayColumn.FromType.Name];
                         if (!JoinTables.Contains(md.TableName))
                         {
                             JoinTables.Add(md.TableName);
@@ -1620,7 +1241,6 @@ namespace LearnLibs
                 this.pri_field_tableName = F.GetTableName(this.pri_field_type);
                 this.internal_field_Properties = this.pri_field_type.GetProperties();
                 buildItems();
-                buildJoinTables();
                 buildGridColumns();
             }
             else
@@ -1875,193 +1495,5 @@ namespace LearnLibs
             }
         }
         #endregion
-    }
-    #endregion
-
-    public static class SQLiteDB
-    {
-        public static void CreatedDatabase(string dbfile)
-        {
-            if (File.Exists(dbfile))
-            {
-                File.Delete(dbfile);
-            }
-            SQLiteConnection.CreateFile(dbfile);
-            string connStr = @"DataSource=" + dbfile + ";Version=3;";
-            using (SQLiteConnection conn = new SQLiteConnection(connStr))
-            {
-                if (conn.State != ConnectionState.Open) conn.Open();
-                Assembly ass = Assembly.GetExecutingAssembly();
-                Type[] types = ass.GetTypes();
-                string createSql = "";
-                foreach (Type t in types)
-                {
-                    if (BaseModel.IsSubclass(t))
-                    {
-                        string fields = "";
-                        string tableName = F.GetTableName(t);
-                        PropertyInfo[] pfs = t.GetProperties();
-                        List<ModelDbItem> items = new List<ModelDbItem>();
-                        foreach (PropertyInfo p in pfs)
-                        {
-                            items.Add(new ModelDbItem(p));
-                        }
-                        items.Sort();
-                        foreach (ModelDbItem item in items)
-                        {
-                            Type pt = item.Property.PropertyType;
-                            if (string.IsNullOrWhiteSpace(fields))
-                            {
-                                fields = item.FieldName;
-                            }
-                            else
-                            {
-                                fields += "," + item.FieldName;
-                            }
-                            switch (item.DataType)
-                            {
-                                case DbType.Guid:
-                                    fields += " GUID";
-                                    break;
-                                case DbType.AnsiString:
-                                    fields += " VARCHAR(" + item.Size.ToString() + ")";
-                                    break;
-                                case DbType.AnsiStringFixedLength:
-                                    fields += " CHAR(" + item.Size.ToString() + ")";
-                                    break;
-                                case DbType.Boolean:
-                                    fields += " BOOLEAN";
-                                    break;
-                                case DbType.Byte:
-                                    fields += " BYTE";
-                                    break;
-                                case DbType.Date:
-                                case DbType.DateTime:
-                                case DbType.DateTime2:
-                                case DbType.DateTimeOffset:
-                                case DbType.Time:
-                                    fields += " DATETIME";
-                                    break;
-                                case DbType.Int16:
-                                case DbType.UInt16:
-                                    fields += " INT16";
-                                    break;
-                                case DbType.Int32:
-                                case DbType.UInt32:
-                                    fields += " INT32";
-                                    break;
-                                case DbType.Int64:
-                                case DbType.UInt64:
-                                    fields += " INT64";
-                                    break;
-                                case DbType.String:
-                                    fields += " NVARCHAR(" + item.Size.ToString() + ")";
-                                    break;
-                                case DbType.StringFixedLength:
-                                    fields += " NCHAR(" + item.Size.ToString() + ")";
-                                    break;
-                                case DbType.VarNumeric:
-                                case DbType.Single:
-                                case DbType.Double:
-                                case DbType.Decimal:
-                                case DbType.Currency:
-                                    fields += " DOUBLE";
-                                    break;
-                                case DbType.Binary:
-                                case DbType.Object:
-                                    fields += " BLOB";
-                                    break;
-                            }
-                            if (item.IsPrimaryKey)
-                            {
-                                fields += " PRIMARY KEY NOT NULL UNIQUE";
-                            }
-                            if (item.DataType != DbType.Guid && item.Column.IsAllowNull)
-                            {
-                                fields += " NULL";
-                            }
-                            else if (!item.Column.IsAllowNull)
-                            {
-                                fields += " NOT NULL";
-                                switch (item.DataType)
-                                {
-                                    case DbType.AnsiString:
-                                    case DbType.String:
-                                        if (item.Column.DefaultValue == null)
-                                        {
-                                            fields += " DEFAULT('')";
-                                        }
-                                        else
-                                        {
-                                            fields += " DEFAULT('" + item.Column.DefaultValue.ToString() + "')";
-                                        }
-                                        break;
-                                    case DbType.AnsiStringFixedLength:
-                                    case DbType.StringFixedLength:
-                                        if (item.Column.DefaultValue == null)
-                                        {
-                                            fields += " DEFAULT('" + "".PadRight(item.Size, '0') + "')";
-                                        }
-                                        else
-                                        {
-                                            fields += " DEFAULT('" + item.Column.DefaultValue.ToString().PadRight(item.Size, '0') + "')";
-                                        }
-                                        break;
-                                    case DbType.Guid:
-                                        fields += " DEFAULT('{" + Guid.Empty.ToString() + "}')";
-                                        break;
-                                    case DbType.Int16:
-                                    case DbType.Int32:
-                                    case DbType.Int64:
-                                        if (item.Column.DefaultValue == null)
-                                        {
-                                            fields += " DEFAULT(0)";
-                                        }
-                                        else
-                                        {
-                                            fields += " DEFAULT(" + item.Column.DefaultValue.ToString() + ")";
-                                        }
-                                        break;
-                                    case DbType.DateTime:
-                                        if (item.Column.DefaultValue == null)
-                                        {
-                                            fields += " DEFAULT(DATETIME('NOW'))";
-                                        }
-                                        else
-                                        {
-                                            fields += " DEFAULT(DATETIME('" + item.Column.DefaultValue.ToString() + "','localtime'))";
-                                        }
-                                        break;
-                                    case DbType.Boolean:
-                                        if (item.Column.DefaultValue == null)
-                                        {
-                                            fields += " DEFAULT(0)";
-                                        }
-                                        else
-                                        {
-                                            fields += " DEFAULT(" + ((bool)item.Column.DefaultValue ? "1" : "0") + ")";
-                                        }
-                                        break;
-                                }
-                            }
-                        }
-                        if (string.IsNullOrWhiteSpace(createSql))
-                        {
-                            createSql = string.Format("CREATE TABLE {0}({1})", tableName, fields);
-                        }
-                        else
-                        {
-                            createSql += ";" + string.Format("CREATE TABLE {0}({1})", tableName, fields);
-                        }
-                    }
-                }
-                using (SQLiteCommand cmd = new SQLiteCommand(createSql, conn))
-                {
-                    cmd.ExecuteNonQuery();
-                    cmd.CommandText = "VACUUM";
-                    cmd.ExecuteNonQuery();
-                }
-            }
-        }
     }
 }
