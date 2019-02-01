@@ -51,6 +51,17 @@ namespace LearnLibs
                         if (at == typeof(DbColumnAttribute))
                         {
                             dbItem._col = a as DbColumnAttribute;
+                            if (ListMember != null)
+                            {
+                                if (dbItem.FieldName == ListMember.DisplayMember)
+                                {
+                                    ListMember.DisplayProperty = p;
+                                }
+                                if (dbItem.FieldName == ListMember.ValueMember)
+                                {
+                                    ListMember.ValueProperty = p;
+                                }
+                            }
                         }
                         else if (at == typeof(PrimaryKeyAttribute))
                         {
@@ -81,33 +92,40 @@ namespace LearnLibs
                             dbItem._autoIdentity = a as AutoIdentityAttribute;
                         }
                     }
-                    if (dbItem.Column != null) {
+                    if (dbItem.Column != null)
+                    {
                         pri_field_items.Add(dbItem);
-                        if (dbItem.IsPrimaryKey) {
+                        if (dbItem.IsPrimaryKey)
+                        {
                             if (_primaryKey == null) { _primaryKey = new ModelPrimaryKey(dbItem); }
                             else { _primaryKey.Add(dbItem); }
                         }
-                        if (dbItem.IsForeignKey) {
+                        if (dbItem.IsForeignKey)
+                        {
                             if (_foreignKeyCols == null) { _foreignKeyCols = new List<ModelDbItem>(); }
                             _foreignKeyCols.Add(dbItem);
                         }
-                        if (dbItem.IsDisplayColumn) {
+                        if (dbItem.IsDisplayColumn)
+                        {
                             if (_displayCols == null) _displayCols = new List<ModelDbItem>();
                             _displayCols.Add(dbItem);
                             if (BaseModel.IsSubclass(dbItem.DisplayColumn.FromType))
                             {
                                 PropertyTable pt = new PropertyTable(dbItem.Property, this.TableName);
-                                _ptc.Add(pt); 
+                                _ptc.Add(pt);
                             }
                         }
-                        if (dbItem.IsAutoIdentity) {
+                        if (dbItem.IsAutoIdentity)
+                        {
                             _autoIdentity = dbItem;
                         }
-                        if (dbItem.IsOrderColumn) {
+                        if (dbItem.IsOrderColumn)
+                        {
                             if (_orderByCols == null) _orderByCols = new List<ModelDbItem>();
                             _orderByCols.Add(dbItem);
                         }
-                        if (dbItem.IsUnqiueKey) {
+                        if (dbItem.IsUnqiueKey)
+                        {
                             if (_unqiueKeys == null) { _unqiueKeys = new ModelUnqiueKeyCollection(dbItem); }
                             else { _unqiueKeys.Add(dbItem); }
                         }
@@ -121,6 +139,29 @@ namespace LearnLibs
             else
             {
                 pri_field_items.Sort();
+            }
+        }
+        internal void buildType()
+        {
+            object[] objs = pri_field_type.GetCustomAttributes(true);
+            if (objs.Length > 0)
+            {
+                foreach (object obj in objs)
+                {
+                    Type type = obj.GetType();
+                    if (type == typeof(DbTableAttribute))
+                    {
+                        this.pri_field_tableName = ((DbTableAttribute)obj).TableName;
+                    }
+                    else if (type == typeof(ListItemAttribute))
+                    {
+                        this.ListMember = obj as ListItemAttribute;
+                    }
+                }
+            }
+            if (string.IsNullOrWhiteSpace(pri_field_tableName))
+            {
+                pri_field_tableName = pri_field_type.Name + "s";
             }
         }
 
@@ -236,22 +277,11 @@ namespace LearnLibs
             e.FormattingApplied = true;
         }
 
-        ModelDbItem getItemForFieldName(string fn)
-        {
-            if (string.IsNullOrWhiteSpace(fn)) return null;
-            foreach (ModelDbItem item in pri_field_items)
-            {
-                if (item.FieldName == fn)
-                {
-                    return item;
-                }
-            }
-            return null;
-        }
         #endregion
 
         #region public properties
-        public PropertyTableCollection PTC {
+        public PropertyTableCollection PTC
+        {
             get { return _ptc; }
         }
         public DisplayScenes CurrentScenes
@@ -259,48 +289,7 @@ namespace LearnLibs
             get { return _currentScenes; }
             set { _currentScenes = value; }
         }
-        /// <summary>
-        /// 获取TreeNode节点Name属性需要的字段名
-        /// </summary>
-        public string TreeNodeNameField
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(_tnNameField))
-                {
-                    for (int i = 0; i < pri_field_items.Count; i++)
-                    {
-                        if (pri_field_items[i].IsTreeNodeColumn && !pri_field_items[i].TreeNodeColumn.IsTextColumn)
-                        {
-                            _tnNameField = pri_field_items[i].FieldName;
-                            break;
-                        }
-                    }
-                }
-                return _tnNameField;
-            }
-        }
-        /// <summary>
-        /// 获取TreeNode节点Text属性需要的字段名
-        /// </summary>
-        public string TreeNodeTextField
-        {
-            get
-            {
-                if (string.IsNullOrWhiteSpace(_tnTextField))
-                {
-                    for (int i = 0; i < pri_field_items.Count; i++)
-                    {
-                        if (pri_field_items[i].IsTreeNodeColumn && pri_field_items[i].TreeNodeColumn.IsTextColumn)
-                        {
-                            _tnTextField = pri_field_items[i].FieldName;
-                            break;
-                        }
-                    }
-                }
-                return _tnTextField;
-            }
-        }
+
         /// <summary>
         /// 类型对应的表名称
         /// </summary>
@@ -426,117 +415,13 @@ namespace LearnLibs
         {
             get { return grid; }
         }
+        /// <summary>
+        /// List控件成员特性
+        /// </summary>
+        public ListItemAttribute ListMember { get; internal set; }
         #endregion
 
         #region public methods
-        public ModelDbItem GetForeignKeyColumn(Type type)
-        {
-            for (int i = 0; i < ForeignKeyColumns.Count; i++)
-            {
-                if (ForeignKeyColumns[i].ForeignKey.Type == type)
-                {
-                    return ForeignKeyColumns[i];
-                }
-            }
-            return null;
-        }
-
-        /// <summary>
-        /// 根据类型实例更新DataRow。如果属性值与对应字段值没有发生变化则不更新相应的字段
-        /// </summary>
-        /// <param name="obj"></param>
-        /// <param name="r"></param>
-        /// <returns></returns>
-        public DataRow SaveDataRow(object obj)
-        {
-            Type t = obj.GetType();
-            DataRow r = null;
-            bool exis = false;
-            Guid guid;
-            Guid objId;
-            if (t == pri_field_type)
-            {
-                foreach (DataRow row in GlobalDataSet.Tables[TableName].Rows)
-                {
-                    guid = F.GetValue<Guid>(row, BaseModel.FN.Id, Guid.Empty);
-                    objId = ((BaseModel)obj).Id;
-                    Console.WriteLine("DataRow Guid Value[" + guid.ToString() + "]=?Object Guid Value[" + objId.ToString() + "]");
-                    if (guid == objId)
-                    {
-                        r = row;
-                        exis = true;
-                        break;
-                    }
-                }
-                if (r == null)
-                {
-                    r = GlobalDataSet.Tables[TableName].NewRow();
-                    exis = false;
-                }
-                DataColumnCollection dcc = r.Table.Columns;
-                foreach (DataColumn dc in dcc)
-                {
-                    ModelDbItem dbitem = getItemForFieldName(dc.ColumnName);
-                    if (dbitem != null)
-                    {
-                        object value = dbitem.Property.GetValue(obj, null);
-                        if (value != null)
-                        {
-                            if (dc.DataType == typeof(int))
-                            {
-                                r[dc.ColumnName] = (int)value;
-                            }
-                            else if (dc.DataType == typeof(Guid))
-                            {
-                                r[dc.ColumnName] = (Guid)value;
-                            }
-                            else
-                            {
-                                r[dc.ColumnName] = value;
-                            }
-                        }
-                    }
-                }
-            }
-            else
-            {
-                throw new Exception("不是需要的类型");
-            }
-            if (!exis)
-            {
-                GlobalDataSet.Tables[TableName].Rows.Add(r);
-            }
-            grid.Refresh();
-            return r;
-        }
-
-        public TreeNode CreateTreeNode(DataRow r)
-        {
-            TreeNode node = new TreeNode();
-            node.Name = GetTreeNodeName(r);
-            node.Text = r[TreeNodeTextField].ToString();
-            node.Tag = ToObject(r);
-            return node;
-        }
-
-        public string GetTreeNodeName(DataRow r)
-        {
-            string strGuid = string.Format("{0:x2}", r[TreeNodeNameField].ToString());
-            return "tn_" + Guid.Parse(strGuid).ToString();
-        }
-
-        public string GetTreeNodeName(object obj)
-        {
-            if (obj.GetType() == pri_field_type)
-            {
-                return "tn_" + ((BaseModel)obj).Id.ToString();
-            }
-            else
-            {
-                return "tn_" + Guid.NewGuid().ToString("N");
-            }
-        }
-
         public bool CheckData(object obj)
         {
             return true;
@@ -548,8 +433,8 @@ namespace LearnLibs
             if (BaseModel.IsSubclass(type))
             {
                 this.pri_field_type = type;
-                this.pri_field_tableName = F.GetTableName(this.pri_field_type);
                 this.internal_field_Properties = this.pri_field_type.GetProperties();
+                buildType();
                 buildItems();
                 buildGridColumns();
             }
@@ -558,42 +443,6 @@ namespace LearnLibs
                 throw new NotInheritBaseModelException(type);
             }
         }
-
-
-        #region 静态函数
-        public bool HasForeignKeyQuote(string fn, Guid Id)
-        {
-            foreach (KeyValuePair<string, ModelDb> kmd in MDs)
-            {
-                string sql = "SELECT COUNT(*) FROM " + kmd.Value.TableName + " WHERE UPPER(HEX(" + fn + "))='" + F.byteToHexStr(Id.ToByteArray()) + "'";
-                using (SQLiteCommand cmd = new SQLiteCommand(sql, Connection))
-                {
-                    int rows = (int)cmd.ExecuteScalar();
-                    if (rows > 0) return true;
-                }
-                if (GlobalDataSet.Tables[kmd.Value.TableName].Select("Convert(" + fn + ",'System.String')='" + Id.ToString() + "')").Length > 0)
-                {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        public bool HasChild(Guid Id)
-        {
-            using (SQLiteCommand cmd = new SQLiteCommand(Connection))
-            {
-                cmd.CommandText = "SELECT COUNT(*) FROM " + TableName + " WHERE UPPER(HEX(" + BaseModel.FN.ParentId + "))='" + F.byteToHexStr(Id.ToByteArray()) + "'";
-                int rows = (int)cmd.ExecuteScalar();
-                if (rows > 0) return true;
-            }
-            if (GlobalDataSet.Tables[TableName].Select("Convert(" + BaseModel.FN.ParentId + ",'System.String')='" + Id.ToString() + "'").Length > 0)
-            {
-                return true;
-            }
-            return false;
-        }
-        #endregion
 
         #region classes
         /// <summary>

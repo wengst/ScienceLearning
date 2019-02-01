@@ -65,6 +65,7 @@ namespace LearnLibs.Models
     /// 学校
     /// </summary>
     [DbTable("learn_Schools")]
+    [ListItem(FN.Id, FN.ShortName)]
     public class School : BaseModel
     {
         /// <summary>
@@ -129,6 +130,7 @@ namespace LearnLibs.Models
     /// 学校班级
     /// </summary>
     [DbTable("learn_schoolClasses")]
+    [ListItem(FN.Id, FN.Alias)]
     public class SchoolClass : BaseModel
     {
         /// <summary>
@@ -437,6 +439,7 @@ namespace LearnLibs.Models
     /// 地区类型
     /// </summary>
     [DbTable("learn_Areas")]
+    [ListItem(FN.Id, FN.Name)]
     public class Area : BaseModel
     {
         /// <summary>
@@ -538,6 +541,7 @@ namespace LearnLibs.Models
     /// 课程标准类型
     /// </summary>
     [DbTable("learn_Standards")]
+    [ListItem(FN.Id, FN.Text)]
     public class Standard : BaseModel
     {
         private Guid _parentId = Guid.Empty;
@@ -605,6 +609,7 @@ namespace LearnLibs.Models
     /// 出版社
     /// </summary>
     [DbTable("learn_Presses")]
+    [ListItem(FN.Id, FN.FullName)]
     public class Press : BaseModel
     {
         /// <summary>
@@ -678,6 +683,7 @@ namespace LearnLibs.Models
     /// 教材类型
     /// </summary>
     [DbTable("learn_TeachBooks")]
+    [ListItem(FN.Id, FN.ShortName)]
     public class TeachBook : BaseModel
     {
         /// <summary>
@@ -781,6 +787,7 @@ namespace LearnLibs.Models
     /// 教材中的单元类
     /// </summary>
     [DbTable("learn_Categorys")]
+    [ListItem(FN.Id, FN.Text)]
     public class Category : BaseModel
     {
         private Guid _parentId = Guid.Empty;
@@ -878,6 +885,7 @@ namespace LearnLibs.Models
     /// 专题类型
     /// </summary>
     [DbTable("learn_Topics")]
+    [ListItem(FN.Id, FN.Text)]
     public class Topic : BaseModel
     {
         /// <summary>
@@ -962,6 +970,7 @@ namespace LearnLibs.Models
     /// 试题类型
     /// </summary>
     [DbTable("learn_Subjects")]
+    [ListItem(FN.Id, FN.Title)]
     public class Subject : BaseModel
     {
         /// <summary>

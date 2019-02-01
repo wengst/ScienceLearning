@@ -25,6 +25,27 @@ namespace LearnLibs
     }
 
     /// <summary>
+    /// 当该类型的DataTable被用于ComboBoxList，CheckBoxList,TreeView之类控件的数据源时，指定ValueMember和DispalyMember
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class)]
+    public class ListItemAttribute : Attribute {
+        public string ValueMember { get; set; }
+        /// <summary>
+        /// ValueMember对应的类型属性
+        /// </summary>
+        public PropertyInfo ValueProperty { get;internal set; }
+        public string DisplayMember { get; set; }
+        /// <summary>
+        /// DisplayMember对应的类型属性
+        /// </summary>
+        public PropertyInfo DisplayProperty { get; internal set; }
+        public ListItemAttribute(string valueMember,string displayMember) {
+            this.ValueMember = valueMember;
+            this.DisplayMember = displayMember;
+        }
+    }
+
+    /// <summary>
     /// 表格显示特性
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]

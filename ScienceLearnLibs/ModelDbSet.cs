@@ -5,6 +5,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.Reflection;
 using System.Windows.Forms;
+using System.IO;
 
 namespace LearnLibs
 {
@@ -13,7 +14,8 @@ namespace LearnLibs
         #region private fields
         static SQLiteConnection Connection = null;
         static DataSet AppDataSet = null;
-        static Dictionary<string, ModelDb> _mds = null;
+        static Dictionary<Type, ModelDb> _tts = null;
+        static List<Type> _derivedTypes = null;
         #endregion
 
         #region private motheds
@@ -73,27 +75,33 @@ namespace LearnLibs
             return BaseModel.IsSubclass(t);
         }
 
+        static void getDerivedTypes()
+        {
+            _tts = new Dictionary<Type, ModelDb>();
+            _derivedTypes = new List<Type>();
+            Assembly ass = Assembly.GetExecutingAssembly();
+            Type[] types = ass.GetTypes();
+            foreach (Type t in types)
+            {
+                if (isBaseModel(t))
+                {
+                    _tts.Add(t, new ModelDb(t));
+                }
+            }
+        }
+
         /// <summary>
         /// 获取模型数据操作集合
         /// </summary>
-        static Dictionary<string, ModelDb> ModelDbs
+        static Dictionary<Type, ModelDb> ModelDbs
         {
             get
             {
-                if (_mds == null)
+                if (_tts == null)
                 {
-                    _mds = new Dictionary<string, ModelDb>();
-                    Assembly ass = Assembly.GetExecutingAssembly();
-                    Type[] types = ass.GetTypes();
-                    foreach (Type t in types)
-                    {
-                        if (isBaseModel(t))
-                        {
-                            _mds.Add(t.Name, new ModelDb(t));
-                        }
-                    }
+                    getDerivedTypes();
                 }
-                return _mds;
+                return _tts;
             }
         }
 
@@ -155,7 +163,7 @@ namespace LearnLibs
         {
             if (type == null) return;
             if (!BaseModel.IsSubclass(type)) return;
-            ModelDb md = ModelDbs[type.Name];
+            ModelDb md = ModelDbs[type];
             string selectSql = "SELECT * FROM " + md.TableName;
             if (!string.IsNullOrWhiteSpace(where))
             {
@@ -188,7 +196,7 @@ namespace LearnLibs
                 string[] joinTableAry = new string[4];
                 string[] joinFieldAry = new string[3];
 
-                ModelDb me = ModelDbs[type.Name];
+                ModelDb me = ModelDbs[type];
                 List<ModelDbItem> Columns = me.Columns;
                 string TableName = me.TableName;
                 string joins = "";
@@ -240,7 +248,7 @@ namespace LearnLibs
             string order = string.Empty;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 if (md.HasOrderColumns)
                 {
                     foreach (ModelDbItem dbItem in md.OrderColumns)
@@ -260,7 +268,7 @@ namespace LearnLibs
             string updateStr = string.Empty;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 List<ModelDbItem> Columns = md.Columns;
                 string tableName = md.TableName;
                 string fields = string.Empty;
@@ -292,7 +300,7 @@ namespace LearnLibs
             SQLiteParameter[] parameters = null;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 parameters = new SQLiteParameter[md.PrimaryKeyColumn.Columns.Count];
                 for (int i = 0; i < parameters.Length; i++)
                 {
@@ -317,7 +325,7 @@ namespace LearnLibs
             SQLiteParameter[] sps = null;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 List<ModelDbItem> Columns = md.Columns;
                 sps = new SQLiteParameter[Columns.Count];
                 for (int i = 0; i < Columns.Count; i++)
@@ -342,7 +350,7 @@ namespace LearnLibs
             string insertStr = string.Empty;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 List<ModelDbItem> Columns = md.Columns;
                 string tableName = md.TableName;
                 string fields = "";
@@ -368,7 +376,7 @@ namespace LearnLibs
             string deleteStr = string.Empty;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 List<ModelDbItem> Columns = md.PrimaryKeyColumn.Columns;
                 string tableName = md.TableName;
                 string where = "";
@@ -392,7 +400,7 @@ namespace LearnLibs
             string createTableStr = string.Empty;
             if (isBaseModel(type))
             {
-                ModelDb md = ModelDbs[type.Name];
+                ModelDb md = ModelDbs[type];
                 List<ModelDbItem> Columns = md.Columns;
                 string tableName = md.TableName;
                 int primaryKeyCount = md.PrimaryKeyColumn.Columns.Count;
@@ -472,9 +480,12 @@ namespace LearnLibs
         {
             get
             {
-                if (ModelDbs.ContainsKey(typeName))
+                foreach (KeyValuePair<Type, ModelDb> item in _tts)
                 {
-                    return ModelDbs[typeName];
+                    if (item.Key.Name == typeName)
+                    {
+                        return item.Value;
+                    }
                 }
                 return null;
             }
@@ -484,9 +495,9 @@ namespace LearnLibs
         {
             get
             {
-                if (ModelDbs.ContainsKey(type.Name))
+                if (ModelDbs.ContainsKey(type))
                 {
-                    return ModelDbs[type.Name];
+                    return ModelDbs[type];
                 }
                 return null;
             }
@@ -505,7 +516,7 @@ namespace LearnLibs
         {
             if (isBaseModel(checkingType) && isBaseModel(foreignKeyType))
             {
-                ModelDb me = ModelDbs[checkingType.Name];
+                ModelDb me = ModelDbs[checkingType];
                 List<ModelDbItem> foreignColumns = me.ForeignKeyColumns;
                 string tableName = me.TableName;
                 if (!AppDataSet.Tables.Contains(tableName)) return false;
@@ -573,7 +584,7 @@ namespace LearnLibs
         public static DataTable GetDataTable(Type type, string fieldName, Guid value)
         {
             DataRow[] rows = new DataRow[0];
-            ModelDb md = ModelDbs[type.Name];
+            ModelDb md = ModelDbs[type];
             string rowFilter = "Convert(" + fieldName + ",'System.String')='" + value.ToString() + "'";
             if (type != null && BaseModel.IsSubclass(type) && !string.IsNullOrWhiteSpace(fieldName) && value != null)
             {
@@ -595,10 +606,16 @@ namespace LearnLibs
             return dt;
         }
 
+        /// <summary>
+        /// 泛型实例化方法
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="r"></param>
+        /// <returns></returns>
         public static T ToObj<T>(DataRow r) where T : BaseModel, new()
         {
             T t = null;
-            ModelDb me = ModelDbs[typeof(T).Name];
+            ModelDb me = ModelDbs[typeof(T)];
             if (r != null && r.Table != null && r.Table.TableName == me.TableName)
             {
                 t = new T();
@@ -665,6 +682,87 @@ namespace LearnLibs
         }
 
         /// <summary>
+        /// 类型实参实例化方法
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="r"></param>
+        /// <returns></returns>
+        public static object GetInstance(Type type, DataRow r)
+        {
+            object obj = null;
+            if (type != null && r != null)
+            {
+                if (isBaseModel(type))
+                {
+                    ModelDb md = ModelDbs[type];
+                    if (r.Table != null && r.Table.TableName == md.TableName)
+                    {
+                        obj = Activator.GetObject(type, null);
+                        foreach (ModelDbItem dbItem in md.Columns)
+                        {
+                            PropertyInfo p = dbItem.Property;
+                            Type pt = p.PropertyType;
+                            string fn = dbItem.FieldName;
+                            if (pt == typeof(Guid))
+                            {
+                                p.SetValue(obj, F.GetValue<Guid>(r, fn, Guid.Empty), null);
+                            }
+                            else if (pt == typeof(int))
+                            {
+                                p.SetValue(obj, F.GetValue<int>(r, fn, 0), null);
+                            }
+                            else if (pt == typeof(bool))
+                            {
+                                p.SetValue(obj, F.GetValue<bool>(r, fn, false), null);
+                            }
+                            else if (pt == typeof(string))
+                            {
+                                p.SetValue(obj, F.GetValue<string>(r, fn, String.Empty), null);
+                            }
+                            else if (pt == typeof(float))
+                            {
+                                p.SetValue(obj, F.GetValue<float>(r, fn, 0f), null);
+                            }
+                            else if (pt == typeof(DateTime))
+                            {
+                                p.SetValue(obj, F.GetValue<DateTime>(r, fn, DateTime.Now), null);
+                            }
+                            else if (pt == typeof(UserRole))
+                            {
+                                p.SetValue(obj, F.GetValue<UserRole>(r, fn, UserRole.未知), null);
+                            }
+                            else if (pt == typeof(SchoolType))
+                            {
+                                p.SetValue(obj, F.GetValue<SchoolType>(r, fn, SchoolType.全日制学校), null);
+                            }
+                            else if (pt == typeof(SchoolGrades))
+                            {
+                                p.SetValue(obj, F.GetValue<SchoolGrades>(r, fn, SchoolGrades.七年级), null);
+                            }
+                            else if (pt == typeof(Semesters))
+                            {
+                                p.SetValue(obj, F.GetValue<Semesters>(r, fn, Semesters.第一学期), null);
+                            }
+                            else if (pt == typeof(EditState))
+                            {
+                                p.SetValue(obj, F.GetValue<EditState>(r, fn, EditState.草稿), null);
+                            }
+                            else if (pt == typeof(ReleaseState))
+                            {
+                                p.SetValue(obj, F.GetValue<ReleaseState>(r, fn, ReleaseState.未发布), null);
+                            }
+                            else if (pt == typeof(AnswerMode))
+                            {
+                                p.SetValue(obj, F.GetValue<AnswerMode>(r, fn, AnswerMode.选择), null);
+                            }
+                        }
+                    }
+                }
+            }
+            return obj;
+        }
+
+        /// <summary>
         /// 根据类型实例更新DataRow。如果属性值与对应字段值没有发生变化则不更新相应的字段
         /// </summary>
         /// <param name="obj"></param>
@@ -673,62 +771,302 @@ namespace LearnLibs
         public static DataRow SaveDataRow(object obj)
         {
             DataRow r = null;
-            if (obj != null && isBaseModel(obj.GetType()))
+            if (obj != null)
             {
                 Type t = obj.GetType();
-                ModelDb md = ModelDbs[t.Name];
-                string TableName = md.TableName;
-                bool exis = false;
-                Guid guid;
-                Guid objId;
-                foreach (DataRow row in AppDataSet.Tables[TableName].Rows)
+                if (isBaseModel(t))
                 {
-                    guid = F.GetValue<Guid>(row, BaseModel.FN.Id, Guid.Empty);
-                    objId = ((BaseModel)obj).Id;
-                    Console.WriteLine("DataRow Guid Value[" + guid.ToString() + "]=?Object Guid Value[" + objId.ToString() + "]");
-                    if (guid == objId)
+                    ModelDb md = ModelDbs[t];
+                    string TableName = md.TableName;
+                    bool exis = false;
+                    Guid guid;
+                    Guid objId;
+                    foreach (DataRow row in AppDataSet.Tables[TableName].Rows)
                     {
-                        r = row;
-                        exis = true;
-                        break;
-                    }
-                }
-                if (r == null)
-                {
-                    r = AppDataSet.Tables[TableName].NewRow();
-                    exis = false;
-                }
-                DataColumnCollection dcc = r.Table.Columns;
-                foreach (DataColumn dc in dcc)
-                {
-                    ModelDbItem dbitem = getItemForFieldName(dc.ColumnName);
-                    if (dbitem != null)
-                    {
-                        object value = dbitem.Property.GetValue(obj, null);
-                        if (value != null)
+                        guid = F.GetValue<Guid>(row, BaseModel.FN.Id, Guid.Empty);
+                        objId = ((BaseModel)obj).Id;
+                        Console.WriteLine("DataRow Guid Value[" + guid.ToString() + "]=?Object Guid Value[" + objId.ToString() + "]");
+                        if (guid == objId)
                         {
-                            if (dc.DataType == typeof(int))
+                            r = row;
+                            exis = true;
+                            break;
+                        }
+                    }
+                    if (r == null)
+                    {
+                        r = AppDataSet.Tables[TableName].NewRow();
+                        exis = false;
+                    }
+                    DataTable dt = AppDataSet.Tables[TableName];
+                    if (dt != null)
+                    {
+                        List<ModelDbItem> TypeCols = md.Columns;
+                        foreach (ModelDbItem typeCol in TypeCols)
+                        {
+                            if (dt.Columns.Contains(typeCol.FieldName))
                             {
-                                r[dc.ColumnName] = (int)value;
-                            }
-                            else if (dc.DataType == typeof(Guid))
-                            {
-                                r[dc.ColumnName] = (Guid)value;
-                            }
-                            else
-                            {
-                                r[dc.ColumnName] = value;
+                                object value = typeCol.Property.GetValue(obj, null);
+                                if (value != null)
+                                {
+                                    DataColumn dc = dt.Columns[typeCol.FieldName];
+                                    if (dc.DataType == typeof(int))
+                                    {
+                                        r[dc.ColumnName] = (int)value;
+                                    }
+                                    else if (dc.DataType == typeof(Guid))
+                                    {
+                                        r[dc.ColumnName] = (Guid)value;
+                                    }
+                                    else
+                                    {
+                                        r[dc.ColumnName] = value;
+                                    }
+                                }
                             }
                         }
                     }
+                    if (!exis)
+                    {
+                        AppDataSet.Tables[TableName].Rows.Add(r);
+                    }
+                    md.Grid.Refresh();
                 }
-                if (!exis)
-                {
-                    GlobalDataSet.Tables[TableName].Rows.Add(r);
-                }
-                grid.Refresh();
             }
             return r;
+        }
+
+        public static TreeNode CreateTreeNode<T>(DataRow r) where T : BaseModel, new()
+        {
+            TreeNode node = null;
+            Type t = typeof(T);
+            if (isBaseModel(t))
+            {
+                ModelDb md = ModelDbs[t];
+                node.Name = "tn_" + r[md.ListMember.ValueMember].ToString();
+                node.Text = r[md.ListMember.DisplayMember].ToString();
+                node.Tag = ToObj<T>(r);
+            }
+            return node;
+        }
+
+        public static bool HasForeignKeyQuote(Type self, string fn, Guid Id)
+        {
+            if (isBaseModel(self))
+            {
+                ModelDb me = ModelDbs[self];
+                foreach (KeyValuePair<Type, ModelDb> kmd in ModelDbs)
+                {
+                    if (AppDataSet.Tables[kmd.Value.TableName].Select("Convert(" + fn + ",'System.String')='" + Id.ToString() + "')").Length > 0)
+                    {
+                        return true;
+                    }
+
+                    string sql = "SELECT COUNT(*) FROM " + kmd.Value.TableName + " WHERE UPPER(HEX(" + fn + "))='" + F.byteToHexStr(Id.ToByteArray()) + "'";
+                    using (SQLiteCommand cmd = new SQLiteCommand(sql, Connection))
+                    {
+                        int rows = (int)cmd.ExecuteScalar();
+                        if (rows > 0) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        public static bool HasChild(Type self, Guid Id)
+        {
+            if (isBaseModel(self))
+            {
+                ModelDb me = ModelDbs[self];
+                if (AppDataSet.Tables[me.TableName].Select("Convert(" + BaseModel.FN.ParentId + ",'System.String')='" + Id.ToString() + "'").Length > 0)
+                {
+                    return true;
+                }
+                using (SQLiteCommand cmd = new SQLiteCommand(Connection))
+                {
+                    cmd.CommandText = "SELECT COUNT(*) FROM " + me.TableName + " WHERE UPPER(HEX(" + BaseModel.FN.ParentId + "))='" + F.byteToHexStr(Id.ToByteArray()) + "'";
+                    int rows = (int)cmd.ExecuteScalar();
+                    if (rows > 0) return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 创建SQLite数据库
+        /// </summary>
+        /// <param name="dbfile"></param>
+        public static void CreatedDatabase(string dbfile)
+        {
+            if (File.Exists(dbfile))
+            {
+                File.Delete(dbfile);
+            }
+            SQLiteConnection.CreateFile(dbfile);
+            string connStr = @"DataSource=" + dbfile + ";Version=3;";
+            using (SQLiteConnection conn = new SQLiteConnection(connStr))
+            {
+                if (conn.State != ConnectionState.Open) conn.Open();
+                string createSql = string.Empty;
+                foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
+                {
+                    string fields = "";
+                    string tableName = kv.Value.TableName;
+                    List<ModelDbItem> Columns = kv.Value.Columns;
+                    foreach (ModelDbItem item in Columns)
+                    {
+                        Type pt = item.Property.PropertyType;
+                        if (string.IsNullOrWhiteSpace(fields))
+                        {
+                            fields = item.FieldName;
+                        }
+                        else
+                        {
+                            fields += "," + item.FieldName;
+                        }
+                        switch (item.DataType)
+                        {
+                            case DbType.Guid:
+                                fields += " GUID";
+                                break;
+                            case DbType.AnsiString:
+                                fields += " VARCHAR(" + item.Size.ToString() + ")";
+                                break;
+                            case DbType.AnsiStringFixedLength:
+                                fields += " CHAR(" + item.Size.ToString() + ")";
+                                break;
+                            case DbType.Boolean:
+                                fields += " BOOLEAN";
+                                break;
+                            case DbType.Byte:
+                                fields += " BYTE";
+                                break;
+                            case DbType.Date:
+                            case DbType.DateTime:
+                            case DbType.DateTime2:
+                            case DbType.DateTimeOffset:
+                            case DbType.Time:
+                                fields += " DATETIME";
+                                break;
+                            case DbType.Int16:
+                            case DbType.UInt16:
+                                fields += " INT16";
+                                break;
+                            case DbType.Int32:
+                            case DbType.UInt32:
+                                fields += " INT32";
+                                break;
+                            case DbType.Int64:
+                            case DbType.UInt64:
+                                fields += " INT64";
+                                break;
+                            case DbType.String:
+                                fields += " NVARCHAR(" + item.Size.ToString() + ")";
+                                break;
+                            case DbType.StringFixedLength:
+                                fields += " NCHAR(" + item.Size.ToString() + ")";
+                                break;
+                            case DbType.VarNumeric:
+                            case DbType.Single:
+                            case DbType.Double:
+                            case DbType.Decimal:
+                            case DbType.Currency:
+                                fields += " DOUBLE";
+                                break;
+                            case DbType.Binary:
+                            case DbType.Object:
+                                fields += " BLOB";
+                                break;
+                        }
+                        if (item.IsPrimaryKey)
+                        {
+                            fields += " PRIMARY KEY NOT NULL UNIQUE";
+                        }
+                        if (item.DataType != DbType.Guid && item.Column.IsAllowNull)
+                        {
+                            fields += " NULL";
+                        }
+                        else if (!item.Column.IsAllowNull)
+                        {
+                            fields += " NOT NULL";
+                            switch (item.DataType)
+                            {
+                                case DbType.AnsiString:
+                                case DbType.String:
+                                    if (item.Column.DefaultValue == null)
+                                    {
+                                        fields += " DEFAULT('')";
+                                    }
+                                    else
+                                    {
+                                        fields += " DEFAULT('" + item.Column.DefaultValue.ToString() + "')";
+                                    }
+                                    break;
+                                case DbType.AnsiStringFixedLength:
+                                case DbType.StringFixedLength:
+                                    if (item.Column.DefaultValue == null)
+                                    {
+                                        fields += " DEFAULT('" + "".PadRight(item.Size, '0') + "')";
+                                    }
+                                    else
+                                    {
+                                        fields += " DEFAULT('" + item.Column.DefaultValue.ToString().PadRight(item.Size, '0') + "')";
+                                    }
+                                    break;
+                                case DbType.Guid:
+                                    fields += " DEFAULT('{" + Guid.Empty.ToString() + "}')";
+                                    break;
+                                case DbType.Int16:
+                                case DbType.Int32:
+                                case DbType.Int64:
+                                    if (item.Column.DefaultValue == null)
+                                    {
+                                        fields += " DEFAULT(0)";
+                                    }
+                                    else
+                                    {
+                                        fields += " DEFAULT(" + item.Column.DefaultValue.ToString() + ")";
+                                    }
+                                    break;
+                                case DbType.DateTime:
+                                    if (item.Column.DefaultValue == null)
+                                    {
+                                        fields += " DEFAULT(DATETIME('NOW'))";
+                                    }
+                                    else
+                                    {
+                                        fields += " DEFAULT(DATETIME('" + item.Column.DefaultValue.ToString() + "','localtime'))";
+                                    }
+                                    break;
+                                case DbType.Boolean:
+                                    if (item.Column.DefaultValue == null)
+                                    {
+                                        fields += " DEFAULT(0)";
+                                    }
+                                    else
+                                    {
+                                        fields += " DEFAULT(" + ((bool)item.Column.DefaultValue ? "1" : "0") + ")";
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    if (string.IsNullOrWhiteSpace(createSql))
+                    {
+                        createSql = string.Format("CREATE TABLE {0}({1})", tableName, fields);
+                    }
+                    else
+                    {
+                        createSql += ";" + string.Format("CREATE TABLE {0}({1})", tableName, fields);
+                    }
+                }
+                using (SQLiteCommand cmd = new SQLiteCommand(createSql, conn))
+                {
+                    cmd.ExecuteNonQuery();
+                    cmd.CommandText = "VACUUM";
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
         #endregion
     }
