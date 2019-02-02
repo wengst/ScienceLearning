@@ -12,10 +12,7 @@ namespace LearnLibs
     public static class ModelDbSet
     {
         #region private fields
-        static SQLiteConnection Connection = null;
-        static DataSet AppDataSet = null;
         static Dictionary<Type, ModelDb> _tts = null;
-        static List<Type> _derivedTypes = null;
         #endregion
 
         #region private motheds
@@ -78,7 +75,6 @@ namespace LearnLibs
         static void getDerivedTypes()
         {
             _tts = new Dictionary<Type, ModelDb>();
-            _derivedTypes = new List<Type>();
             Assembly ass = Assembly.GetExecutingAssembly();
             Type[] types = ass.GetTypes();
             foreach (Type t in types)
@@ -103,32 +99,6 @@ namespace LearnLibs
                 }
                 return _tts;
             }
-        }
-
-        /// <summary>
-        /// 将Where条件参数集转换为Where条件字符串表达式
-        /// </summary>
-        /// <param name="args"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        static string getWhere(List<WhereArg> args, WhereTarget target = WhereTarget.SQLite)
-        {
-            string where = string.Empty;
-            if (args != null)
-            {
-                foreach (WhereArg arg in args)
-                {
-                    if (string.IsNullOrWhiteSpace(where))
-                    {
-                        where = target == WhereTarget.SQLite ? arg.ToWhereString() : arg.ToRowFilterString();
-                    }
-                    else
-                    {
-                        where += " AND " + (target == WhereTarget.SQLite ? arg.ToWhereString() : arg.ToRowFilterString());
-                    }
-                }
-            }
-            return where;
         }
 
         /// <summary>
@@ -476,32 +446,13 @@ namespace LearnLibs
         #endregion
 
         #region public properties
-        public static ModelDb this[string typeName]
+        public static DataSet AppDataSet
         {
-            get
-            {
-                foreach (KeyValuePair<Type, ModelDb> item in _tts)
-                {
-                    if (item.Key.Name == typeName)
-                    {
-                        return item.Value;
-                    }
-                }
-                return null;
-            }
+            get;
+            set;
         }
 
-        public static ModelDb this[Type type]
-        {
-            get
-            {
-                if (ModelDbs.ContainsKey(type))
-                {
-                    return ModelDbs[type];
-                }
-                return null;
-            }
-        }
+        public static SQLiteConnection Connection { get; set; }
         #endregion
 
         #region public methods
@@ -570,40 +521,69 @@ namespace LearnLibs
             return false;
         }
 
-        public static bool RowIsExists(Type t, string fieldName, Guid value)
+        public static bool RowIsExists(Type t, WhereArg where)
         {
-            if (t != null && BaseModel.IsSubclass(t) && !string.IsNullOrWhiteSpace(fieldName) && value != null)
+            if (t != null && BaseModel.IsSubclass(t))
             {
-                DataTable dt = GetDataTable(t, fieldName, value);
+                DataTable dt = GetDataTable(t, where);
                 if (dt == null || dt.Rows.Count == 0) return false;
                 return true;
             }
             return false;
         }
 
-        public static DataTable GetDataTable(Type type, string fieldName, Guid value)
+        public static DataTable GetDataTable(Type type, WhereArg where)
         {
-            DataRow[] rows = new DataRow[0];
-            ModelDb md = ModelDbs[type];
-            string rowFilter = "Convert(" + fieldName + ",'System.String')='" + value.ToString() + "'";
-            if (type != null && BaseModel.IsSubclass(type) && !string.IsNullOrWhiteSpace(fieldName) && value != null)
+            DataTable dt = null;
+            if (isBaseModel(type))
             {
-                if (md != null && AppDataSet.Tables.Contains(md.TableName) && AppDataSet.Tables[md.TableName].Columns.Contains(fieldName))
+                ModelDb md = ModelDbs[type];
+                if (!AppDataSet.Tables.Contains(md.TableName))
                 {
-                    rows = AppDataSet.Tables[md.TableName].Select(rowFilter);
+                    fillRows(type, where == null ? "" : where.ToWhereString());
+                }
+                if (where == null)
+                {
+                    dt = AppDataSet.Tables[md.TableName];
+                }
+                else
+                {
+                    dt = AppDataSet.Tables[md.TableName].Clone();
+                    dt.Rows.Add(AppDataSet.Tables[md.TableName].Select(where.ToRowFilterString()));
                 }
             }
-            if (rows == null)
+            return dt;
+        }
+
+        public static DataTable GetDataTable(WhereArgs where, Type type)
+        {
+            DataTable dt = null;
+            if (isBaseModel(type))
             {
-                fillRows(type, "UPPER(HEX(" + fieldName + "))='" + F.byteToHexStr(value.ToByteArray()) + "'");
-                rows = AppDataSet.Tables[md.TableName].Select(rowFilter);
-            }
-            DataTable dt = AppDataSet.Tables[md.TableName].Clone();
-            if (rows != null && rows.Length > 0)
-            {
-                dt.Rows.Add(rows);
+                ModelDb md = ModelDbs[type];
+                if (!AppDataSet.Tables.Contains(md.TableName))
+                {
+                    fillRows(type, where == null ? "" : where.ToWhereString());
+                }
+                if (where == null)
+                {
+                    dt = AppDataSet.Tables[md.TableName];
+                }
+                else
+                {
+                    dt = AppDataSet.Tables[md.TableName].Clone();
+                    dt.Rows.Add(AppDataSet.Tables[md.TableName].Select(where.ToRowFilterString()));
+                }
             }
             return dt;
+        }
+
+        public static void ShowDataGirdView(Type type, WhereArgs wheres)
+        {
+            if (isBaseModel(type))
+            {
+                ModelDbs[type].Grid.DataSource = GetDataTable(wheres, type);
+            }
         }
 
         /// <summary>
@@ -768,7 +748,7 @@ namespace LearnLibs
         /// <param name="obj"></param>
         /// <param name="r"></param>
         /// <returns></returns>
-        public static DataRow SaveDataRow(object obj)
+        public static DataRow SaveDataRow<T>(T obj) where T : BaseModel, new()
         {
             DataRow r = null;
             if (obj != null)
@@ -785,7 +765,7 @@ namespace LearnLibs
                     {
                         guid = F.GetValue<Guid>(row, BaseModel.FN.Id, Guid.Empty);
                         objId = ((BaseModel)obj).Id;
-                        Console.WriteLine("DataRow Guid Value[" + guid.ToString() + "]=?Object Guid Value[" + objId.ToString() + "]");
+                        //Console.WriteLine("DataRow Guid Value[" + guid.ToString() + "]=?Object Guid Value[" + objId.ToString() + "]");
                         if (guid == objId)
                         {
                             r = row;
@@ -836,6 +816,83 @@ namespace LearnLibs
             return r;
         }
 
+        public static string GetNodeName(DataRow row)
+        {
+            if (row == null) return string.Empty;
+            return F.byteToHexStr(((Guid)row[BaseModel.FN.Id]).ToByteArray());
+        }
+
+        public static string GetNodeName<T>(T obj) where T : BaseModel, new()
+        {
+            if (obj == null) return string.Empty;
+            return F.byteToHexStr(obj.Id.ToByteArray());
+        }
+
+        public static string GetNodeText<T>(T obj) where T : BaseModel, new()
+        {
+            if (obj == null) return string.Empty;
+            string retStr = string.Empty;
+            Type t = typeof(T);
+            ModelDb md = ModelDbs[t];
+            if (md.ListMember != null)
+            {
+                object textObj = md.ListMember.DisplayProperty.GetValue(obj, null);
+                if (textObj != null)
+                {
+                    retStr = textObj.ToString();
+                }
+                else
+                {
+                    PropertyInfo[] pis = t.GetProperties();
+                    foreach (PropertyInfo p in pis)
+                    {
+                        if (p.PropertyType == typeof(string))
+                        {
+                            object txtObj = p.GetValue(obj, null);
+                            if (txtObj != null)
+                            {
+                                retStr = txtObj.ToString();
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return retStr;
+        }
+
+        public static string GetNodeText<T>(DataRow row)
+        {
+            string retStr = string.Empty;
+            Type t = typeof(T);
+            if (isBaseModel(t) && row != null && row.Table != null)
+            {
+                ModelDb md = ModelDbs[t];
+                if (md.ListMember != null)
+                {
+                    if (row.Table.Columns.Contains(md.ListMember.DisplayMember))
+                    {
+                        if (!row.IsNull(md.ListMember.DisplayMember))
+                        {
+                            retStr = row[md.ListMember.DisplayMember].ToString();
+                        }
+                    }
+                }
+                if (string.IsNullOrWhiteSpace(retStr))
+                {
+                    for (int i = 0; i < row.Table.Columns.Count; i++)
+                    {
+                        if (!row.IsNull(i))
+                        {
+                            retStr = row[i].ToString();
+                            break;
+                        }
+                    }
+                }
+            }
+            return retStr;
+        }
+
         public static TreeNode CreateTreeNode<T>(DataRow r) where T : BaseModel, new()
         {
             TreeNode node = null;
@@ -843,30 +900,47 @@ namespace LearnLibs
             if (isBaseModel(t))
             {
                 ModelDb md = ModelDbs[t];
-                node.Name = "tn_" + r[md.ListMember.ValueMember].ToString();
-                node.Text = r[md.ListMember.DisplayMember].ToString();
+                node.Name = GetNodeName(r);
+                node.Text = GetNodeText<T>(r);
                 node.Tag = ToObj<T>(r);
             }
             return node;
         }
 
-        public static bool HasForeignKeyQuote(Type self, string fn, Guid Id)
+        public static void UpdateNode<T>(TreeNodeCollection nodes, T newObj) where T : BaseModel, new()
+        {
+            if (nodes != null && newObj != null)
+            {
+                foreach (TreeNode node in nodes)
+                {
+                    T tagObj = (T)node.Tag;
+                    if (GetNodeName<T>(newObj) == node.Name)
+                    {
+                        node.Text = GetNodeText<T>(newObj);
+                        node.Tag = newObj;
+                        break;
+                    }
+                }
+            }
+        }
+
+        public static bool HasForeignKeyQuote(Type self, WhereArg arg)
         {
             if (isBaseModel(self))
             {
-                ModelDb me = ModelDbs[self];
-                foreach (KeyValuePair<Type, ModelDb> kmd in ModelDbs)
+                foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
                 {
-                    if (AppDataSet.Tables[kmd.Value.TableName].Select("Convert(" + fn + ",'System.String')='" + Id.ToString() + "')").Length > 0)
+                    if (kv.Key != self && kv.Value.ContainField(arg.Field))
                     {
-                        return true;
-                    }
-
-                    string sql = "SELECT COUNT(*) FROM " + kmd.Value.TableName + " WHERE UPPER(HEX(" + fn + "))='" + F.byteToHexStr(Id.ToByteArray()) + "'";
-                    using (SQLiteCommand cmd = new SQLiteCommand(sql, Connection))
-                    {
-                        int rows = (int)cmd.ExecuteScalar();
-                        if (rows > 0) return true;
+                        if (!AppDataSet.Tables.Contains(kv.Value.TableName))
+                        {
+                            fillRows(kv.Value.TableName, null);
+                        }
+                        DataTable dt = GetDataTable(kv.Key, arg);
+                        if (dt != null && dt.Rows.Count > 0)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
@@ -890,6 +964,25 @@ namespace LearnLibs
                 }
             }
             return false;
+        }
+
+        public static void Update()
+        {
+            if (AppDataSet != null && Connection != null)
+            {
+                if (Connection.State == ConnectionState.Closed) Connection.Open();
+                using (SQLiteDataAdapter sda = new SQLiteDataAdapter())
+                {
+                    foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
+                    {
+                        sda.InsertCommand = InsertCommand(kv.Key);
+                        sda.UpdateCommand = UpdateCommand(kv.Key);
+                        sda.DeleteCommand = DeleteCommand(kv.Key);
+                        sda.Update(AppDataSet.Tables[kv.Value.TableName]);
+                        AppDataSet.Tables[kv.Value.TableName].AcceptChanges();
+                    }
+                }
+            }
         }
 
         /// <summary>
@@ -1067,6 +1160,13 @@ namespace LearnLibs
                     cmd.ExecuteNonQuery();
                 }
             }
+        }
+
+        public static bool CheckData<T>(T obj) where T : BaseModel, new() {
+            return true;
+        }
+        public static bool CheckData<T>(DataRow row)where T:BaseModel,new() {
+            return true;
         }
         #endregion
     }

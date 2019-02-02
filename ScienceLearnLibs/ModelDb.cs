@@ -26,8 +26,6 @@ namespace LearnLibs
         List<ModelDbItem> _orderByCols = null;
         ModelDbItem _autoIdentity = null;
         ModelUnqiueKeyCollection _unqiueKeys = null;
-        string _tnNameField = "";
-        string _tnTextField = "";
         DataGridView grid = new DataGridView();
         DisplayScenes _currentScenes = DisplayScenes.未设置;
         List<ModelDbItem> dcols = null;
@@ -383,6 +381,18 @@ namespace LearnLibs
             {
                 return _orderByCols != null && _orderByCols.Count > 0;
             }
+        }
+
+        public bool ContainField(string fieldName) {
+            bool r = false;
+            foreach (ModelDbItem item in Columns)
+            {
+                if (item.FieldName == fieldName) {
+                    r = true;
+                    break;
+                }
+            }
+            return r;
         }
 
         /// <summary>

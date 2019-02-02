@@ -147,42 +147,6 @@ namespace LearnLibs
         }
 
         /// <summary>
-        /// 根据外键获取此数据列的Where条件表达式
-        /// </summary>
-        /// <param name="arg"></param>
-        /// <returns></returns>
-        public SelectExpression GetWhere(ForeignKeyArg arg)
-        {
-            if (arg == null) throw new ArgumentNullException("obj");
-            if (!IsForeignKey) throw new NotContainAttributeException(typeof(ForeignKeyAttribute));
-            SelectExpression SE = new SelectExpression();
-            if (F.IsDigital(this.DataType))
-            {
-                SE.DataTableWhere = SE.SQLiteWhere = this.FieldName + "=" + arg.Value.ToString();
-            }
-            else if (DataType != DbType.Guid)
-            {
-                SE.DataTableWhere = SE.SQLiteWhere = this.FieldName + "='" + arg.Value.ToString() + "'";
-            }
-            else
-            {
-                Guid guid = Guid.Empty;
-                if (Guid.TryParse(arg.Value.ToString(), out guid))
-                {
-                    SE.SQLiteWhere = "HEX(" + FieldName + ")='" + F.byteToHexStr(guid.ToByteArray()) + "'";
-                    SE.DataTableWhere = "Convert(" + FieldName + ",'System.String')='" + guid.ToString() + "'";
-                }
-                else
-                {
-                    SE.SQLiteWhere = "HEX(" + FieldName + ")='" + F.byteToHexStr(guid.ToByteArray()) + "'";
-                    SE.DataTableWhere = "Convert(" + FieldName + ",'System.String')='" + guid.ToString() + "'";
-                }
-            }
-            //Console.WriteLine(SE.DataTableWhere);
-            return SE;
-        }
-
-        /// <summary>
         /// 获取该数据列的Order By表达式：FieldName ASC|DESC
         /// </summary>
         /// <returns></returns>
