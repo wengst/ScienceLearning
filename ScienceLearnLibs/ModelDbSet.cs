@@ -6,6 +6,7 @@ using System.Data.SQLite;
 using System.Reflection;
 using System.Windows.Forms;
 using System.IO;
+using LearnLibs.Controls;
 
 namespace LearnLibs
 {
@@ -13,6 +14,7 @@ namespace LearnLibs
     {
         #region private fields
         static Dictionary<Type, ModelDb> _tts = null;
+        static DisplayScenes _scenes = DisplayScenes.未设置;
         #endregion
 
         #region private motheds
@@ -25,7 +27,7 @@ namespace LearnLibs
         /// <returns></returns>
         static string joinString(string frontStr, string backStr, string seq)
         {
-            if (!string.IsNullOrWhiteSpace(backStr) && !string.IsNullOrWhiteSpace(seq))
+            if (!string.IsNullOrWhiteSpace(backStr) && seq != null && seq != string.Empty && seq != "")
             {
                 if (string.IsNullOrWhiteSpace(frontStr))
                 {
@@ -84,6 +86,19 @@ namespace LearnLibs
                     _tts.Add(t, new ModelDb(t));
                 }
             }
+            foreach (KeyValuePair<Type, ModelDb> kv in _tts)
+            {
+                ModelDb md = kv.Value;
+                foreach (ModelDbItem m in md.Columns)
+                {
+                    if (m.IsDisplayColumn && m.IsForeignKey && isBaseModel(m.DisplayColumn.FromType) && isBaseModel(m.ForeignKey.Type) && m.ForeignKey.Type == m.DisplayColumn.FromType)
+                    {
+                        PropertyTable pt = new PropertyTable(m.Property, _tts[m.DisplayColumn.FromType].TableName);
+                        md.PTC.Add(pt);
+                    }
+                }
+                //Console.WriteLine(kv.Key.Name + "有" + md.PTC.List.Count.ToString());
+            }
         }
 
         /// <summary>
@@ -111,6 +126,7 @@ namespace LearnLibs
         {
             if (string.IsNullOrWhiteSpace(tableName)) return;
             string selectSql = "SELECT * FROM " + tableName;
+
             if (!string.IsNullOrWhiteSpace(where))
             {
                 selectSql += " WHERE " + where;
@@ -133,8 +149,9 @@ namespace LearnLibs
         {
             if (type == null) return;
             if (!BaseModel.IsSubclass(type)) return;
+            Console.WriteLine(getSelectSqlNoWhere(type));
             ModelDb md = ModelDbs[type];
-            string selectSql = "SELECT * FROM " + md.TableName;
+            string selectSql = getSelectSqlNoWhere(type);
             if (!string.IsNullOrWhiteSpace(where))
             {
                 selectSql += " WHERE " + where;
@@ -162,9 +179,9 @@ namespace LearnLibs
             if (isBaseModel(type))
             {
                 string joinTableStr = "LEFT JOIN {0} AS {1} ON {1}.{2}=a.{3}";
-                string joinFieldStr = "{0}.{1} AS {2}";
-                string[] joinTableAry = new string[4];
-                string[] joinFieldAry = new string[3];
+                string joinFieldStr = "{0}.{1} as {2}";
+                string[] joinTableAry = null;
+                string[] joinFieldAry = null;
 
                 ModelDb me = ModelDbs[type];
                 List<ModelDbItem> Columns = me.Columns;
@@ -173,36 +190,33 @@ namespace LearnLibs
                 string fields = "";
                 foreach (ModelDbItem item in Columns)
                 {
+                    fields = joinString(fields, string.Format(joinFieldStr, new object[] { "a", item.FieldName, item.FieldName }), ",");
 
-                    if (!item.IsDisplayColumn)
+                    if (item.IsDisplayColumn && isBaseModel(item.DisplayColumn.FromType))
                     {
-                        fields = joinString(fields, "a." + item.FieldName, ",");
-                    }
-                    else
-                    {
-                        if (isBaseModel(item.DisplayColumn.FromType))
+                        joinTableAry = new string[4];
+                        joinFieldAry = new string[3];
+                        PropertyInfo p = item.Property;
+                        string tAlias = me.PTC.TableAlias(p);
+                        string tName = me.PTC.TableName(p);
+                        if (!string.IsNullOrWhiteSpace(tAlias))
                         {
-                            PropertyInfo p = item.Property;
+                            joinTableAry[0] = tName;
+                            joinTableAry[1] = tAlias;
+                            joinTableAry[2] = item.ForeignKey.Field;
+                            joinTableAry[3] = item.FieldName;
 
-                            string tAlias = me.PTC.TableAlias(p);
-                            string tName = me.PTC.TableName(p);
-                            if (!string.IsNullOrWhiteSpace(tAlias))
-                            {
-                                joinTableAry[0] = tName;
-                                joinTableAry[1] = tAlias;
-                                joinTableAry[2] = item.ForeignKey.Field;
-                                joinTableAry[3] = item.FieldName;
-
-                                joinFieldAry[0] = tAlias;
-                                joinFieldAry[1] = item.DisplayColumn.Field;
-                                joinFieldAry[2] = item.AsField;
-                                fields = joinString(fields, string.Format(joinFieldStr, joinFieldAry), ",");
-                                joins = joinString(joins, string.Format(joinTableStr, joinTableAry), " ");
-                            }
+                            joinFieldAry[0] = tAlias;
+                            joinFieldAry[1] = item.DisplayColumn.Field;
+                            joinFieldAry[2] = item.AsField;
+                            fields = joinString(fields, string.Format(joinFieldStr, joinFieldAry), ",");
+                            joins = joinString(joins, string.Format(joinTableStr, joinTableAry), " ");
+                            var i = 0;
+                            Console.WriteLine("joins" + joins);
                         }
                     }
-
                 }
+                Console.WriteLine("JOIN=" + joins);
                 return "SELECT " + fields + " FROM " + TableName + " AS a " + joins;
             }
             return string.Empty;
@@ -446,6 +460,7 @@ namespace LearnLibs
         #endregion
 
         #region public properties
+        public static DisplayScenes Scenes { get { return _scenes; } set { _scenes = value; } }
         public static DataSet AppDataSet
         {
             get;
@@ -521,69 +536,157 @@ namespace LearnLibs
             return false;
         }
 
+        /// <summary>
+        /// 行是否存在
+        /// </summary>
+        /// <param name="t"></param>
+        /// <param name="where"></param>
+        /// <returns></returns>
         public static bool RowIsExists(Type t, WhereArg where)
         {
             if (t != null && BaseModel.IsSubclass(t))
             {
-                DataTable dt = GetDataTable(t, where);
-                if (dt == null || dt.Rows.Count == 0) return false;
+                DataView dv = GetDataView(t, where);
+                if (dv == null || dv.Count == 0) return false;
                 return true;
             }
             return false;
         }
 
-        public static DataTable GetDataTable(Type type, WhereArg where)
+        public static DataView GetDataView(Type type, WhereArg where)
         {
-            DataTable dt = null;
+            DataView dv = null;
             if (isBaseModel(type))
             {
                 ModelDb md = ModelDbs[type];
                 if (!AppDataSet.Tables.Contains(md.TableName))
                 {
-                    fillRows(type, where == null ? "" : where.ToWhereString());
+                    fillRows(type, where == null ? "" : where.Where);
                 }
                 if (where == null)
                 {
-                    dt = AppDataSet.Tables[md.TableName];
+                    dv = AppDataSet.Tables[md.TableName].DefaultView;
                 }
                 else
                 {
-                    dt = AppDataSet.Tables[md.TableName].Clone();
-                    dt.Rows.Add(AppDataSet.Tables[md.TableName].Select(where.ToRowFilterString()));
+                    dv = new DataView();
+                    dv.Table = AppDataSet.Tables[md.TableName];
+                    dv.RowFilter = where.RowFilter;
                 }
             }
-            return dt;
+            return dv;
         }
 
-        public static DataTable GetDataTable(WhereArgs where, Type type)
+        public static DataView GetDataView<T>(WhereArgs where) where T : BaseModel, new()
         {
-            DataTable dt = null;
+            Type type = typeof(T);
+            DataView dv = null;
+
+            ModelDb md = ModelDbs[type];
+            if (!AppDataSet.Tables.Contains(md.TableName))
+            {
+                fillRows(type, where == null ? "" : where.Where);
+            }
+            if (where == null)
+            {
+                dv = AppDataSet.Tables[md.TableName].DefaultView;
+            }
+            else
+            {
+                dv = new DataView();
+                dv.Table = AppDataSet.Tables[md.TableName];
+                dv.RowFilter = where.RowFilter;
+            }
+            return dv;
+        }
+
+        public static DataView GetDataView(WhereArgs where, Type type)
+        {
+            DataView dv = null;
             if (isBaseModel(type))
             {
                 ModelDb md = ModelDbs[type];
                 if (!AppDataSet.Tables.Contains(md.TableName))
                 {
-                    fillRows(type, where == null ? "" : where.ToWhereString());
+                    fillRows(type, where == null ? "" : where.Where);
                 }
                 if (where == null)
                 {
-                    dt = AppDataSet.Tables[md.TableName];
+                    dv = AppDataSet.Tables[md.TableName].DefaultView;
                 }
                 else
                 {
-                    dt = AppDataSet.Tables[md.TableName].Clone();
-                    dt.Rows.Add(AppDataSet.Tables[md.TableName].Select(where.ToRowFilterString()));
+                    dv = new DataView();
+                    dv.Table = AppDataSet.Tables[md.TableName];
+                    dv.RowFilter = where.RowFilter;
                 }
             }
-            return dt;
+            return dv;
         }
 
-        public static void ShowDataGirdView(Type type, WhereArgs wheres)
+        public static void RefreshGrid<T>(WhereArgs args) where T : BaseModel, new()
         {
-            if (isBaseModel(type))
+            ModelDbs[typeof(T)].Grid.DataSource = GetDataView<T>(args);
+            ModelDbs[typeof(T)].Grid.Refresh();
+        }
+
+        /// <summary>
+        /// 获取表格中选定行的DataRow
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static DataRow GetSelectedGridDataRow<T>() where T : BaseModel, new()
+        {
+            Type t = typeof(T);
+            DataRow row = null;
+            if (isBaseModel(t))
             {
-                ModelDbs[type].Grid.DataSource = GetDataTable(wheres, type);
+                DataGridView grid = ModelDbs[t].Grid;
+                if (grid != null && grid.SelectedRows.Count > 0)
+                {
+                    if (grid.DataSource != null)
+                    {
+                        Type dataSourceType = grid.DataSource.GetType();
+                        if (dataSourceType == typeof(DataTable))
+                        {
+                            row = (DataRow)grid.SelectedRows[0].DataBoundItem;
+                        }
+                        else if (dataSourceType == typeof(DataView))
+                        {
+                            row = ((DataRowView)grid.SelectedRows[0].DataBoundItem).Row;
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("请先选择欲编辑项所在的行");
+                }
             }
+            else
+            {
+                MessageBox.Show("泛型类必须是BaseModel的派生类", C.OperationPrompt, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            return row;
+        }
+
+        public static T GetSelectedObjectAtGrid<T>() where T : BaseModel, new()
+        {
+            DataRow row = GetSelectedGridDataRow<T>();
+            if (row != null)
+            {
+                return ToObj<T>(row);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public static DataGridView GetDataGridView<T>() where T : BaseModel
+        {
+            ModelDb md = ModelDbs[typeof(T)];
+            md.CurrentScenes = _scenes;
+            return md.Grid;
         }
 
         /// <summary>
@@ -748,7 +851,7 @@ namespace LearnLibs
         /// <param name="obj"></param>
         /// <param name="r"></param>
         /// <returns></returns>
-        public static DataRow SaveDataRow<T>(T obj) where T : BaseModel, new()
+        public static DataRow SaveDataRow<T>(T obj, bool isNew) where T : BaseModel, new()
         {
             DataRow r = null;
             if (obj != null)
@@ -773,7 +876,7 @@ namespace LearnLibs
                             break;
                         }
                     }
-                    if (r == null)
+                    if (isNew)
                     {
                         r = AppDataSet.Tables[TableName].NewRow();
                         exis = false;
@@ -893,6 +996,33 @@ namespace LearnLibs
             return retStr;
         }
 
+        public static void AddNode<T>(TreeNode selectedNode, DataRow row) where T : BaseModel, new()
+        {
+            if (row != null && !row.IsNull(BaseModel.FN.Id) && selectedNode != null)
+            {
+                TreeNode node = CreateTreeNode<T>(row);
+                node.ForeColor = System.Drawing.Color.Red;
+                selectedNode.Nodes.Add(node);
+            }
+        }
+
+        public static void RemoveNode<T>(TreeNodeCollection nodes, T obj) where T : BaseModel, new()
+        {
+            if (nodes != null && obj != null)
+            {
+                for (int i = 0; i < nodes.Count; i++)
+                {
+                    TreeNode node = nodes[i];
+                    T tagObj = (T)node.Tag;
+                    if (tagObj == obj)
+                    {
+                        nodes.RemoveAt(i);
+                        break;
+                    }
+                }
+            }
+        }
+
         public static TreeNode CreateTreeNode<T>(DataRow r) where T : BaseModel, new()
         {
             TreeNode node = null;
@@ -900,6 +1030,7 @@ namespace LearnLibs
             if (isBaseModel(t))
             {
                 ModelDb md = ModelDbs[t];
+                node = new TreeNode();
                 node.Name = GetNodeName(r);
                 node.Text = GetNodeText<T>(r);
                 node.Tag = ToObj<T>(r);
@@ -907,17 +1038,21 @@ namespace LearnLibs
             return node;
         }
 
-        public static void UpdateNode<T>(TreeNodeCollection nodes, T newObj) where T : BaseModel, new()
+        public static void UpdateNode<T>(TreeNode selectedNode, T newObj) where T : BaseModel, new()
         {
-            if (nodes != null && newObj != null)
+            if (selectedNode != null && newObj != null)
             {
-                foreach (TreeNode node in nodes)
+                foreach (TreeNode node in selectedNode.Nodes)
                 {
                     T tagObj = (T)node.Tag;
                     if (GetNodeName<T>(newObj) == node.Name)
                     {
                         node.Text = GetNodeText<T>(newObj);
                         node.Tag = newObj;
+                        if (node.ForeColor == node.TreeView.ForeColor)
+                        {
+                            node.ForeColor = System.Drawing.Color.Blue;
+                        }
                         break;
                     }
                 }
@@ -936,8 +1071,8 @@ namespace LearnLibs
                         {
                             fillRows(kv.Value.TableName, null);
                         }
-                        DataTable dt = GetDataTable(kv.Key, arg);
-                        if (dt != null && dt.Rows.Count > 0)
+                        DataView dv = GetDataView(kv.Key, arg);
+                        if (dv != null && dv.Count > 0)
                         {
                             return true;
                         }
@@ -975,14 +1110,144 @@ namespace LearnLibs
                 {
                     foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
                     {
-                        sda.InsertCommand = InsertCommand(kv.Key);
-                        sda.UpdateCommand = UpdateCommand(kv.Key);
-                        sda.DeleteCommand = DeleteCommand(kv.Key);
-                        sda.Update(AppDataSet.Tables[kv.Value.TableName]);
-                        AppDataSet.Tables[kv.Value.TableName].AcceptChanges();
+                        if (AppDataSet.Tables[kv.Value.TableName] != null)
+                        {
+                            sda.InsertCommand = InsertCommand(kv.Key);
+                            sda.UpdateCommand = UpdateCommand(kv.Key);
+                            sda.DeleteCommand = DeleteCommand(kv.Key);
+                            sda.Update(AppDataSet.Tables[kv.Value.TableName]);
+                            AppDataSet.Tables[kv.Value.TableName].AcceptChanges();
+                        }
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 显示模型编辑器
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="selectedNode">选中的节点参数。该参数用于当数据更新时，可以同时更新该节点的子节点中的对应节点的数据。</param>
+        /// <param name="isNew">新增=true，修改=false</param>
+        public static void ShowEditor<T>(Form owner, TreeNode selectedNode, T obj, bool isUpdateChildNodes) where T : BaseModel, new()
+        {
+            Type t = typeof(T);
+            ModelDb md = ModelDbs[t];
+            DataRow row = null;
+            bool isNew = obj.Id != Guid.Empty;
+            if (md.ModelEditor != null && md.ModelEditor.Editor.BaseType == typeof(FormDialog))
+            {
+                FormDialog f = (FormDialog)Activator.CreateInstance(md.ModelEditor.Editor, null);
+                f.Object = obj;
+                f.Owner = owner;
+                f.StartPosition = FormStartPosition.CenterParent;
+                if (f.ShowDialog() == DialogResult.OK)
+                {
+                    obj = (T)f.Object;
+                    if (!CheckData<T>(obj)) return;
+                    row = SaveDataRow<T>(obj, isNew);
+                    ModelDbs[t].Grid.Refresh();
+                    if (selectedNode != null && isUpdateChildNodes)
+                    {
+                        if (isNew)
+                        {
+                            AddNode<T>(selectedNode, row);
+                        }
+                        else
+                        {
+                            UpdateNode<T>(selectedNode, obj);
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 删除指定项
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="nodes"></param>
+        public static void Delete<T>(TreeNodeCollection nodes) where T : BaseModel, new()
+        {
+            Type t = typeof(T);
+            ModelDb me = ModelDbs[t];
+            if (me.Grid.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("请在表格中选择要删除的项", C.OperationPrompt, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            DataRow row = GetSelectedGridDataRow<T>();
+            T obj = ToObj<T>(row);
+            foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
+            {
+                ModelDbItem frKey = kv.Value.GetForeignKey(t);
+                if (frKey != null)
+                {
+                    WhereArg arg = new WhereArg(frKey.FieldName, row[frKey.ForeignKey.Field]);
+                    DataView dv = GetDataView(kv.Key, arg);
+                    if (dv != null && dv.Count > 0)
+                    {
+                        MessageBox.Show("该项至少被引用了一次，所以不能删除!");
+                        return;
+                    }
+                }
+            }
+            row.Delete();
+            me.Grid.Refresh();
+            if (nodes != null)
+            {
+                RemoveNode<T>(nodes, obj);
+            }
+        }
+
+        /// <summary>
+        /// 根据WhereArgs查询参数，获取泛型所对应表的相应字段值
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="field"></param>
+        /// <param name="args"></param>
+        /// <returns></returns>
+        public static object GetFieldValue<T>(string field, WhereArgs args) where T : BaseModel, new()
+        {
+            if (string.IsNullOrWhiteSpace(field) && args == null) return null;
+            Type t = typeof(T);
+            ModelDb md = ModelDbs[t];
+            if (!AppDataSet.Tables.Contains(md.TableName))
+            {
+                fillRows(md.TableName, null);
+            }
+            DataRow[] rows = AppDataSet.Tables[md.TableName].Select(args.RowFilter);
+            if (rows != null && rows.Length > 0)
+            {
+                DataRow row = rows[0];
+                if (row.IsNull(field))
+                {
+                    return null;
+                }
+                else
+                {
+                    return row[field];
+                }
+            }
+            return null;
+        }
+
+        public static string GetFieldString<T>(string field, WhereArgs args) where T : BaseModel, new()
+        {
+            object value = GetFieldValue<T>(field, args);
+            if (value != null)
+            {
+                return value.ToString();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        public static string GetFieldString<T>(string returnField, string findField, object findValue) where T : BaseModel, new()
+        {
+            return GetFieldString<T>(returnField, new WhereArgs() { new WhereArg(findField, findValue) });
         }
 
         /// <summary>
@@ -1162,10 +1427,13 @@ namespace LearnLibs
             }
         }
 
-        public static bool CheckData<T>(T obj) where T : BaseModel, new() {
+        public static bool CheckData<T>(T obj) where T : BaseModel, new()
+        {
             return true;
         }
-        public static bool CheckData<T>(DataRow row)where T:BaseModel,new() {
+
+        public static bool CheckData<T>(DataRow row) where T : BaseModel, new()
+        {
             return true;
         }
         #endregion

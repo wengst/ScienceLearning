@@ -46,6 +46,23 @@ namespace LearnLibs
     }
 
     /// <summary>
+    /// 模型编辑器
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class)]
+    public class ModelEditorAttribute : Attribute {
+        public Type Editor { get; set; }
+        public ModelEditorAttribute() { }
+        public ModelEditorAttribute(Type type) { this.Editor = type; }
+    }
+
+    [AttributeUsage(AttributeTargets.Property)]
+    public class ItemEditorAttribute : Attribute {
+        public Type Editor { get; set; }
+        public ItemEditorAttribute() { }
+        public ItemEditorAttribute(Type type) { this.Editor = type; }
+    }
+
+    /// <summary>
     /// 表格显示特性
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]

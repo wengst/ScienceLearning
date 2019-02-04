@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Data;
-using System.Reflection;
 
 namespace LearnLibs
 {
@@ -66,16 +65,14 @@ namespace LearnLibs
             public const string Difficult = "Difficult";
             public const string Score = "Score";
         }
-        /// <summary>
-        /// 简单TreeViewName绑定字段
-        /// </summary>
-        public string TreeNodeNameField = "Id";
-        /// <summary>
-        /// 简单TreeViewText绑定字段
-        /// </summary>
-        public string TreeNodeTextField = "";
 
+        #region private fields
         private Guid _id = Guid.Empty;
+        private bool _inServer = false;
+        private DateTime _lastModify = DateTime.Now; 
+        #endregion
+
+        #region public properties
         /// <summary>
         /// 本地ID
         /// </summary>
@@ -88,34 +85,13 @@ namespace LearnLibs
         /// 是否已经存入服务器
         /// </summary>
         [DbColumn(FN.InServer, DbType.Boolean, IsAllowNull = false, DefaultValue = false, Index = -2)]
-        public bool InServer { get; set; }
+        public bool InServer { get { return _inServer; } set { _inServer = value; } }
 
         [DbColumn(FN.LastModify, DbType.DateTime, IsAllowNull = false, Index = -1)]
-        public DateTime LastModify { get; set; }
-        public virtual string TreeNodeNameValue()
-        {
-            return Id.ToString("x2");
-        }
-        public virtual string TreeNodeTextValue()
-        {
-            return "";
-        }
-        public abstract void SetDataRow(ref DataRow r);
-        protected void SetValues(ref DataRow r)
-        {
-            F.SetValue(ref r, FN.Id, Id);
-            F.SetValue(ref r, FN.InServer, InServer);
-            F.SetValue(ref r, FN.LastModify, LastModify);
-        }
-        public abstract BaseModel ToObject(DataRow r);
-        protected T BuildInstance<T>(DataRow r) where T : BaseModel, new()
-        {
-            T obj = new T();
-            obj.Id = F.GetValue<Guid>(r, FN.Id, Guid.Empty);
-            obj.InServer = F.GetValue<bool>(r, FN.InServer, false);
-            obj.LastModify = F.GetValue<DateTime>(r, FN.LastModify, DateTime.Now);
-            return obj;
-        }
+        public DateTime LastModify { get { return _lastModify; } set { _lastModify = value; } } 
+        #endregion
+
+        #region static methods
         /// <summary>
         /// 是否继承自BaseModel
         /// </summary>
@@ -125,26 +101,7 @@ namespace LearnLibs
         {
             if (type == null) return false;
             return type.IsSubclassOf(typeof(BaseModel));
-        }
-
-        public static bool IsFieldInType(Type type, string field) {
-            if (type == null || string.IsNullOrWhiteSpace(field)) return false;
-            if (IsSubclass(type)) {
-                PropertyInfo[] pis = type.GetProperties();
-                foreach (PropertyInfo p in pis)
-                {
-                    object[] ats = p.GetCustomAttributes(typeof(DbColumnAttribute),true);
-                    foreach (object at in ats) {
-                        if (at.GetType() == typeof(DbColumnAttribute)) {
-                            DbColumnAttribute c = at as DbColumnAttribute;
-                            if (c.FieldName == field) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            return false;
-        }
+        } 
+        #endregion
     }
 }

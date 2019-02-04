@@ -68,11 +68,11 @@ namespace LearnLibs.Enums
         /// <summary>
         /// 内部管理端
         /// </summary>
-        运营端 = 1,
+        运营端 = 0x1,
         /// <summary>
         /// 用户端
         /// </summary>
-        客户端 = 2
+        客户端 = 0x2
     }
 
     /// <summary>

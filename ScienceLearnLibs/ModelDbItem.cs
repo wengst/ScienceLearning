@@ -31,7 +31,7 @@ namespace LearnLibs
         /// <summary>
         /// 数据列关联的属性
         /// </summary>
-        public PropertyInfo Property { get { return _property; } }
+        public PropertyInfo Property { get { return _property; } internal set { _property = value; } }
 
         /// <summary>
         /// 数据列

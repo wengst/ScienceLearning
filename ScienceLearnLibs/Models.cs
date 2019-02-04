@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Windows.Forms;
+using LearnLibs.Controls;
 
 namespace LearnLibs.Models
 {
@@ -31,34 +32,6 @@ namespace LearnLibs.Models
         [DbColumn(FN.Alias, DbType.String, 4, Index = 4, IsAllowNull = true)]
         [DisplayColumn("别名", 3)]
         public string Alias { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(User)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.AccountName,AccountName},
-                    {FN.AccountPassword,AccountPassword},
-                    {FN.Role,(int)Role},
-                    {FN.Alias,Alias}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            User u = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(User)))
-            {
-                u = base.BuildInstance<User>(r);
-                u.AccountName = F.GetValue<string>(r, FN.AccountName, String.Empty);
-                u.AccountPassword = F.GetValue<string>(r, FN.AccountPassword, String.Empty);
-                u.Role = F.GetValue<UserRole>(r, FN.Role, UserRole.未知);
-                u.Alias = F.GetValue<string>(r, FN.Alias, String.Empty);
-            }
-            return u;
-        }
     }
 
     /// <summary>
@@ -66,6 +39,7 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_Schools")]
     [ListItem(FN.Id, FN.ShortName)]
+    [ModelEditor(typeof(Controls.FormDialog))]
     public class School : BaseModel
     {
         /// <summary>
@@ -96,34 +70,6 @@ namespace LearnLibs.Models
         [DbColumn(FN.ShortName, DbType.String, 4, Index = 4, IsAllowNull = false)]
         [DisplayColumn("简称", 2, Scenes = DisplayScenes.运营端)]
         public string ShortName { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(School)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> {
-                    {FN.CityId,CityId},
-                    {FN.SchoolType,(int)SchoolType},
-                    {FN.FullName,FullName},
-                    {FN.ShortName,ShortName}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            School s = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(School)))
-            {
-                s = base.BuildInstance<School>(r);
-                s.CityId = F.GetValue<Guid>(r, FN.CityId, Guid.Empty);
-                s.SchoolType = F.GetValue<SchoolType>(r, FN.SchoolType, SchoolType.全日制学校);
-                s.FullName = F.GetValue<string>(r, FN.FullName, String.Empty);
-                s.ShortName = F.GetValue<string>(r, FN.ShortName, String.Empty);
-            }
-            return s;
-        }
     }
 
     /// <summary>
@@ -182,40 +128,6 @@ namespace LearnLibs.Models
         [DbColumn(FN.Graduation, DbType.Int32, Index = 7, IsAllowNull = false, DefaultValue = (int)SchoolGrades.九年级)]
         [DisplayColumn("毕业年级", 5, Scenes = DisplayScenes.运营端, FromType = typeof(SchoolGrades))]
         public SchoolGrades Graduation { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(SchoolClass)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.SchoolId,SchoolId},
-                    {FN.SchoolType,(int)SchoolType},
-                    {FN.Alias,Alias},
-                    {FN.IndexNo,Index},
-                    {FN.Period,Period},
-                    {FN.Admission,(int)Admission},
-                    {FN.Graduation,(int)Graduation}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            SchoolClass sc = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(SchoolClass)))
-            {
-                sc = base.BuildInstance<SchoolClass>(r);
-                sc.SchoolId = F.GetValue<Guid>(r, FN.SchoolId, Guid.Empty);
-                sc.Index = F.GetValue<int>(r, FN.IndexNo, 1);
-                sc.SchoolType = F.GetValue<SchoolType>(r, FN.SchoolType, SchoolType.全日制学校);
-                sc.Alias = F.GetValue<string>(r, FN.Alias, String.Empty);
-                sc.Period = F.GetValue<int>(r, FN.Period, 2020);
-                sc.Admission = F.GetValue<SchoolGrades>(r, FN.Admission, SchoolGrades.七年级);
-                sc.Graduation = F.GetValue<SchoolGrades>(r, FN.Graduation, SchoolGrades.九年级);
-            }
-            return sc;
-        }
     }
 
     /// <summary>
@@ -286,42 +198,6 @@ namespace LearnLibs.Models
         [DisplayColumn("别名", 7)]
         [TreeNodeColumn(true)]
         public string Alias { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Schooling)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.ProvinceId,ProvinceId},
-                    {FN.CityId,CityId},
-                    {FN.DistrictId,DistrictId},
-                    {FN.SchoolId,SchoolId},
-                    {FN.SchoolClassId,SchoolClassId},
-                    {FN.UserId,UserId},
-                    {FN.IndexNo,Index},
-                    {FN.Alias,Alias}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Schooling s = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Schooling)))
-            {
-                s = base.BuildInstance<Schooling>(r);
-                s.ProvinceId = F.GetValue<Guid>(r, FN.ProvinceId, Guid.Empty);
-                s.CityId = F.GetValue<Guid>(r, FN.CityId, Guid.Empty);
-                s.DistrictId = F.GetValue<Guid>(r, FN.DistrictId, Guid.Empty);
-                s.SchoolId = F.GetValue<Guid>(r, FN.SchoolId, Guid.Empty);
-                s.SchoolClassId = F.GetValue<Guid>(r, FN.SchoolClassId, Guid.Empty);
-                s.UserId = F.GetValue<Guid>(r, FN.UserId, Guid.Empty);
-                s.Index = F.GetValue<int>(r, FN.IndexNo, 1);
-                s.Alias = F.GetValue<string>(r, FN.Alias, String.Empty);
-            }
-            return s;
-        }
     }
 
     /// <summary>
@@ -353,33 +229,6 @@ namespace LearnLibs.Models
         [DisplayColumn("别名", 3)]
         [TreeNodeColumn(true)]
         public string Alias { get; set; }
-
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Teaching)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.SchoolId,SchoolId},
-                    {FN.UserId,UserId},
-                    {FN.Alias,Alias}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Teaching t = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Teaching)))
-            {
-                t = base.BuildInstance<Teaching>(r);
-                t.SchoolId = F.GetValue<Guid>(r, FN.SchoolId, Guid.Empty);
-                t.UserId = F.GetValue<Guid>(r, FN.UserId, Guid.Empty);
-                t.Alias = F.GetValue<string>(r, FN.Alias, String.Empty);
-            }
-            return t;
-        }
     }
 
     /// <summary>
@@ -407,30 +256,6 @@ namespace LearnLibs.Models
         [DbColumn(FN.Alias, DbType.String, 4, Index = 3, IsAllowNull = true)]
         [DisplayColumn("别名", 2)]
         public string Alias { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(TeachingDetail)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> {
-                    {FN.TeachingId,TeachingId},
-                    {FN.SchoolClassId,SchoolClassId}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            TeachingDetail t = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(TeachingDetail)))
-            {
-                t = base.BuildInstance<TeachingDetail>(r);
-                t.TeachingId = F.GetValue<Guid>(r, FN.TeachingId, Guid.Empty);
-                t.SchoolClassId = F.GetValue<Guid>(r, FN.SchoolClassId, Guid.Empty);
-            }
-            return t;
-        }
     }
     #endregion
 
@@ -440,6 +265,7 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_Areas")]
     [ListItem(FN.Id, FN.Name)]
+    [ModelEditor(typeof(frmArea))]
     public class Area : BaseModel
     {
         /// <summary>
@@ -483,57 +309,23 @@ namespace LearnLibs.Models
             set;
         }
 
+        public Area()
+        {
+            this.Id = Guid.Empty;
+            this.ParentId = Guid.Empty;
+        }
         public Area CreateChild()
         {
             Area a = new Area();
-            a.Id = Guid.NewGuid();
+            a.Id = Guid.Empty;
             a.ParentId = this.Id;
-            a.IsValid = true;
+            a.IsValid = this.IsValid;
             a.InServer = false;
             a.LastModify = DateTime.Now;
             a.PressId = this.PressId;
             a.Code = this.Code;
             a.xPath = this.xPath + this.Code;
             return a;
-        }
-        public override string TreeNodeTextValue()
-        {
-            return string.Format("[{0}]{1}", Code, Name);
-        }
-        public override string TreeNodeNameValue()
-        {
-            return Id.ToString("x2");
-        }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Area)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> {
-                    {FN.Code,Code},
-                    {FN.ParentId,ParentId},
-                    {FN.Name,Name},
-                    {FN.IsValid,IsValid},
-                    {FN.xPath,xPath}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Area t = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Area)))
-            {
-                t = base.BuildInstance<Area>(r);
-                t.ParentId = F.GetValue<Guid>(r, FN.ParentId, Guid.Empty);
-                t.Code = F.GetValue<string>(r, FN.Code, String.Empty);
-                t.Name = F.GetValue<string>(r, FN.Name, String.Empty);
-                t.IsValid = F.GetValue<bool>(r, FN.IsValid, true);
-                t.xPath = F.GetValue<string>(r, FN.xPath, String.Empty);
-                t.PressId = F.GetValue<Guid>(r, FN.PressId, Guid.Empty);
-            }
-            return t;
         }
     }
 
@@ -565,42 +357,15 @@ namespace LearnLibs.Models
         [DbColumn(FN.xPath, DbType.String, 64, Index = 5, IsAllowNull = true)]
         public string xPath { get; set; }
 
-        public Standard CreateNewStandard()
+        public Standard CreateChild()
         {
             Standard s = new Standard();
-            s.Id = Guid.NewGuid();
+            s.Id = Guid.Empty;
             s.InServer = false;
             s.LastModify = DateTime.Now;
-            return s;
-        }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Standard)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> {
-                    {FN.ParentId,ParentId},
-                    {FN.Code,Code},
-                    {FN.Text,Text},
-                    {FN.IsValid,IsValid},
-                    {FN.xPath,xPath}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Standard s = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Standard)))
-            {
-                s = base.BuildInstance<Standard>(r);
-                s.ParentId = F.GetValue<Guid>(r, FN.LastModify, Guid.Empty);
-                s.Code = F.GetValue<string>(r, FN.Code, String.Empty);
-                s.Text = F.GetValue<string>(r, FN.Text, String.Empty);
-                s.IsValid = F.GetValue<bool>(r, FN.IsValid, true);
-                s.xPath = F.GetValue<string>(r, FN.xPath, String.Empty);
-            }
+            s.ParentId = this.Id;
+            s.IsValid = this.IsValid;
+            s.xPath = this.xPath + "_" + this.Code;
             return s;
         }
     }
@@ -610,6 +375,7 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_Presses")]
     [ListItem(FN.Id, FN.FullName)]
+    [ModelEditor(typeof(frmPress))]
     public class Press : BaseModel
     {
         /// <summary>
@@ -631,6 +397,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
         [DisplayColumn("有效?", 3, FromType = typeof(bool))]
         public bool IsValid { get; set; }
+
         public Press()
         {
             this.IsValid = true;
@@ -639,43 +406,13 @@ namespace LearnLibs.Models
         public TeachBook CreateNewBook()
         {
             TeachBook tb = new TeachBook();
-            tb.Id = Guid.NewGuid();
-            tb.InServer = false;
-            tb.LastModify = DateTime.Now;
+            
             tb.PressId = this.Id;
             tb.SchoolGrade = SchoolGrades.七年级;
             tb.Semester = Semesters.第一学期;
             tb.ImplementDate = DateTime.Parse("2013-1-1");
             tb.IsValid = true;
             return tb;
-        }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Press)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> {
-                    {FN.Code,Code},
-                    {FN.FullName,FullName},
-                    {FN.ShortName,ShortName},
-                    {FN.IsValid,IsValid}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Press p = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Press)))
-            {
-                p = base.BuildInstance<Press>(r);
-                p.Code = F.GetValue<string>(r, FN.Code, string.Empty);
-                p.FullName = F.GetValue<string>(r, FN.FullName, String.Empty);
-                p.ShortName = F.GetValue<string>(r, FN.ShortName, String.Empty);
-                p.IsValid = F.GetValue<bool>(r, FN.IsValid, true);
-            }
-            return p;
         }
     }
 
@@ -684,6 +421,7 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_TeachBooks")]
     [ListItem(FN.Id, FN.ShortName)]
+    [ModelEditor(typeof(frmTeachBook))]
     public class TeachBook : BaseModel
     {
         /// <summary>
@@ -691,6 +429,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Press), FN.Id)]
+        [DisplayColumn("出版社", 7, typeof(Press), BaseModel.FN.ShortName, FillWeight = 30)]
         public Guid PressId { get; set; }
 
         /// <summary>
@@ -726,9 +465,17 @@ namespace LearnLibs.Models
         /// 实施日期
         /// </summary>
         [DbColumn(FN.ImplementDate, DbType.DateTime, Index = 6, IsAllowNull = false, DefaultValue = "2013-09-01 00:00:00")]
-        [DisplayColumn("实施日期", 5, Format = "0:D")]
+        [DisplayColumn("实施日期", 5, Format = "{0:yyyy-MM-dd}")]
         public DateTime ImplementDate { get; set; }
 
+        public TeachBook()
+        {
+            this.ImplementDate = DateTime.Now;
+            FullName = string.Empty;
+            ShortName = string.Empty;
+            SchoolGrade = SchoolGrades.七年级;
+            Semester = Semesters.第一学期;
+        }
         /// <summary>
         /// 是否有效
         /// </summary>
@@ -739,47 +486,11 @@ namespace LearnLibs.Models
         public Category CreateNewCategory()
         {
             Category c = new Category();
-            c.Id = Guid.NewGuid();
             c.PressId = this.PressId;
             c.TeachBookId = this.Id;
-            c.LastModify = DateTime.Now;
             c.Index = 1;
             c.IsValid = this.IsValid;
             return c;
-        }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(TeachBook)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.PressId,PressId},
-                    {FN.FullName,FullName},
-                    {FN.ShortName,ShortName},
-                    {FN.SchoolGrade,SchoolGrade},
-                    {FN.Semester,Semester},
-                    {FN.IsValid,IsValid},
-                    {FN.ImplementDate,ImplementDate}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            TeachBook tb = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(TeachBook)))
-            {
-                tb = base.BuildInstance<TeachBook>(r);
-                tb.PressId = F.GetValue<Guid>(r, FN.PressId, Guid.Empty);
-                tb.FullName = F.GetValue<string>(r, FN.FullName, String.Empty);
-                tb.ShortName = F.GetValue<string>(r, FN.ShortName, String.Empty);
-                tb.SchoolGrade = F.GetValue<SchoolGrades>(r, FN.SchoolGrade, SchoolGrades.七年级);
-                tb.Semester = F.GetValue<Semesters>(r, FN.Semester, Semesters.第一学期);
-                tb.ImplementDate = F.GetValue<DateTime>(r, FN.ImplementDate, DateTime.MinValue);
-                tb.IsValid = F.GetValue<bool>(r, FN.IsValid, true);
-            }
-            return tb;
         }
     }
 
@@ -788,6 +499,7 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_Categorys")]
     [ListItem(FN.Id, FN.Text)]
+    [ModelEditor(typeof(frmCategory))]
     public class Category : BaseModel
     {
         private Guid _parentId = Guid.Empty;
@@ -838,45 +550,11 @@ namespace LearnLibs.Models
         public Category CreateNewCategory()
         {
             Category c = new Category();
-            c.Id = Guid.NewGuid();
             c.PressId = this.PressId;
             c.TeachBookId = this.TeachBookId;
             c.ParentId = this.Id;
-            c.LastModify = DateTime.Now;
             c.Index = 1;
-            c.IsValid = true;
-            return c;
-        }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Category)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.PressId,PressId},
-                    {FN.TeachBookId,TeachBookId},
-                    {FN.ParentId,ParentId},
-                    {FN.IndexNo,Index},
-                    {FN.Text,Text},
-                    {FN.IsValid,IsValid}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Category c = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Category)))
-            {
-                c = base.BuildInstance<Category>(r);
-                c.PressId = F.GetValue<Guid>(r, FN.PressId, Guid.Empty);
-                c.TeachBookId = F.GetValue<Guid>(r, FN.TeachBookId, Guid.Empty);
-                c.ParentId = F.GetValue<Guid>(r, FN.ParentId, Guid.Empty);
-                c.Index = F.GetValue<int>(r, FN.IndexNo, 1);
-                c.Text = F.GetValue<string>(r, FN.Text, String.Empty);
-                c.IsValid = F.GetValue<bool>(r, FN.IsValid, true);
-            }
+            c.IsValid = this.IsValid;
             return c;
         }
     }
@@ -930,38 +608,6 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn("xPath", DbType.AnsiString, 64)]
         public string xPath { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Topic)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r, new Dictionary<string, object> { 
-                    {FN.ParentId,ParentId},
-                    {FN.Code,Code},
-                    {FN.IndexNo,Index},
-                    {FN.Text,Text},
-                    {FN.IsValid,IsValid},
-                    {FN.xPath,xPath}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Topic t = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Topic)))
-            {
-                t = base.BuildInstance<Topic>(r);
-                t.ParentId = F.GetValue<Guid>(r, FN.ParentId, Guid.Empty);
-                t.Code = F.GetValue<string>(r, FN.Code, String.Empty);
-                t.Index = F.GetValue<int>(r, FN.IndexNo, 1);
-                t.Text = F.GetValue<string>(r, FN.Text, String.Empty);
-                t.IsValid = F.GetValue<bool>(r, FN.IsValid, true);
-                t.xPath = F.GetValue<string>(r, FN.xPath, String.Empty);
-            }
-            return t;
-        }
     }
     #endregion
 
@@ -1028,43 +674,6 @@ namespace LearnLibs.Models
         [DbColumn(FN.Price, DbType.Int16, Index = 8, IsAllowNull = false, DefaultValue = 0)]
         [DisplayColumn("价格", 7)]
         public int Price { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null)
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r,
-                    new Dictionary<string, object> { 
-                        {FN.UserId,UserId},
-                        {FN.Title,Title},
-                        {FN.ContentUrl,ContentUrl},
-                        {FN.AnalysisUrl,AnalysisUrl},
-                        {FN.CreatedTime,CreatedTime},
-                        {FN.EditState,(int)EditState},
-                        {FN.ReleaseState,(int)ReleaseState},
-                        {FN.Price,Price}
-                    });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Subject s = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Subject)))
-            {
-                s = base.BuildInstance<Subject>(r);
-                s.UserId = F.GetValue<Guid>(r, FN.UserId, Guid.Empty);
-                s.Title = F.GetValue<string>(r, FN.Title, String.Empty);
-                s.ContentUrl = F.GetValue<string>(r, FN.ContentUrl, String.Empty);
-                s.AnalysisUrl = F.GetValue<string>(r, FN.AnalysisUrl, String.Empty);
-                s.CreatedTime = F.GetValue<DateTime>(r, FN.CreatedTime, DateTime.Now);
-                s.EditState = F.GetValue<EditState>(r, FN.EditState, EditState.草稿);
-                s.ReleaseState = F.GetValue<ReleaseState>(r, FN.ReleaseState, ReleaseState.未发布);
-                s.Price = F.GetValue<int>(r, FN.Price, 0);
-            }
-            return s;
-        }
     }
 
     /// <summary>
@@ -1115,39 +724,6 @@ namespace LearnLibs.Models
         [DbColumn(FN.Score, DbType.Decimal, Size = 9, Precision = 1, Index = 6, IsAllowNull = false, DefaultValue = 1f)]
         [DisplayColumn("分值", 6)]
         public float Score { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Question)))
-            {
-                base.SetValues(ref r);
-                F.SetValues(ref r,
-                    new Dictionary<string, object> { 
-                    {FN.SubjectId,SubjectId},
-                    {FN.AnswerMode,AnswerMode},
-                    {FN.OptionChars,OptionChars},
-                    {FN.KeyChars,KeyChars},
-                    {FN.Difficult,Difficult},
-                    {FN.Score,Score}
-                });
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            Question q = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(Question)))
-            {
-                q = base.BuildInstance<Question>(r);
-                q.SubjectId = F.GetValue<Guid>(r, FN.SubjectId, Guid.Empty);
-                q.AnswerMode = F.GetValue<AnswerMode>(r, FN.AnswerMode, AnswerMode.选择);
-                q.OptionChars = F.GetValue<string>(r, FN.OptionChars, String.Empty);
-                q.KeyChars = F.GetValue<string>(r, FN.KeyChars, String.Empty);
-                q.Difficult = F.GetValue<float>(r, FN.Difficult, 0.7f);
-                q.Score = F.GetValue<float>(r, FN.Score, 1f);
-            }
-            return q;
-        }
     }
 
     /// <summary>
@@ -1170,28 +746,6 @@ namespace LearnLibs.Models
         [ForeignKey(typeof(Standard), FN.Id)]
         [DisplayColumn("课标", 1, typeof(Standard), FN.Text)]
         public Guid StandardId { get; set; }
-
-        public override void SetDataRow(ref DataRow r)
-        {
-            if (r != null)
-            {
-                base.SetValues(ref r);
-                F.SetValue(ref r, FN.QuestionId, QuestionId);
-                F.SetValue(ref r, FN.StandardId, StandardId);
-            }
-        }
-
-        public override BaseModel ToObject(DataRow r)
-        {
-            QuestionStandard qs = null;
-            if (r != null && r.Table != null && r.Table.TableName == F.GetTableName(typeof(QuestionStandard)))
-            {
-                qs = base.BuildInstance<QuestionStandard>(r);
-                qs.QuestionId = F.GetValue<Guid>(r, FN.QuestionId, Guid.Empty);
-                qs.StandardId = F.GetValue<Guid>(r, FN.StandardId, Guid.Empty);
-            }
-            return qs;
-        }
     }
     #endregion
 }

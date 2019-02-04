@@ -43,6 +43,7 @@ namespace LearnLibs
                 {
                     object[] attrs = p.GetCustomAttributes(true);
                     ModelDbItem dbItem = new ModelDbItem();
+                    dbItem.Property = p;
                     foreach (object a in attrs)
                     {
                         Type at = a.GetType();
@@ -107,11 +108,6 @@ namespace LearnLibs
                         {
                             if (_displayCols == null) _displayCols = new List<ModelDbItem>();
                             _displayCols.Add(dbItem);
-                            if (BaseModel.IsSubclass(dbItem.DisplayColumn.FromType))
-                            {
-                                PropertyTable pt = new PropertyTable(dbItem.Property, this.TableName);
-                                _ptc.Add(pt);
-                            }
                         }
                         if (dbItem.IsAutoIdentity)
                         {
@@ -139,6 +135,7 @@ namespace LearnLibs
                 pri_field_items.Sort();
             }
         }
+
         internal void buildType()
         {
             object[] objs = pri_field_type.GetCustomAttributes(true);
@@ -154,6 +151,10 @@ namespace LearnLibs
                     else if (type == typeof(ListItemAttribute))
                     {
                         this.ListMember = obj as ListItemAttribute;
+                    }
+                    else if (type == typeof(ModelEditorAttribute))
+                    {
+                        this.ModelEditor = obj as ModelEditorAttribute;
                     }
                 }
             }
@@ -172,7 +173,7 @@ namespace LearnLibs
                 {
                     foreach (ModelDbItem b in DisplayColumns)
                     {
-                        if (b.DisplayColumn.Scenes == _currentScenes)
+                        if ((b.DisplayColumn.Scenes & _currentScenes) == _currentScenes)
                         {
                             dcols.Add(b);
                         }
@@ -191,13 +192,18 @@ namespace LearnLibs
             grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grid.Columns.Clear();
             List<ModelDbItem> cols = getDisplayColumns();
+            //Console.WriteLine(_currentScenes);
             foreach (ModelDbItem b in cols)
             {
-                if (b.DisplayColumn.Scenes == _currentScenes)
+                //Console.WriteLine(b.DisplayColumn.Scenes & _currentScenes);
+                if ((b.DisplayColumn.Scenes & _currentScenes) == _currentScenes)
                 {
                     DataGridViewTextBoxColumn c = new DataGridViewTextBoxColumn();
                     c.HeaderText = b.DisplayColumn.HeaderText;
                     c.FillWeight = b.DisplayColumn.FillWeight;
+                    if (!string.IsNullOrWhiteSpace(b.DisplayColumn.Format)) {
+                        c.DefaultCellStyle.Format = b.DisplayColumn.Format;
+                    }
                     c.ReadOnly = true;
                     if (BaseModel.IsSubclass(b.DisplayColumn.FromType))
                     {
@@ -210,7 +216,8 @@ namespace LearnLibs
                     grid.Columns.Add(c);
                 }
             }
-            //grid.CellFormatting += new DataGridViewCellFormattingEventHandler(cellFormatting);
+            //Console.WriteLine(this.TableName + " Build Columns Completed,Columns.Count=" + grid.Columns.Count.ToString());
+            grid.CellFormatting += new DataGridViewCellFormattingEventHandler(cellFormatting);
             //grid.DataError += new DataGridViewDataErrorEventHandler(dataError);
         }
 
@@ -220,56 +227,63 @@ namespace LearnLibs
             if (e.Value == null) { e.Value = "NULL"; e.FormattingApplied = true; return; }
             if (e.Value.GetType() == typeof(System.DBNull)) { e.Value = "DBNULL"; e.FormattingApplied = true; return; }
             if (dcols == null) { getDisplayColumns(); }
-            Console.WriteLine("cellFormatting " + dcols[e.ColumnIndex].DisplayColumn.HeaderText + " ValueType=" + e.Value.GetType().ToString() + " Value=" + e.Value.ToString());
+            //Console.WriteLine("cellFormatting " + dcols[e.ColumnIndex].DisplayColumn.HeaderText + " ValueType=" + e.Value.GetType().ToString() + " Value=" + e.Value.ToString());
             if (e.ColumnIndex < dcols.Count && !e.FormattingApplied && e.Value != null && e.Value.GetType() != typeof(DBNull) && !string.IsNullOrWhiteSpace(e.Value.ToString()))
             {
                 //Console.WriteLine(dcols[e.ColumnIndex].DisplayColumn.HeaderText + "," + dcols[e.ColumnIndex].FieldName);
                 ModelDbItem dbCol = dcols[e.ColumnIndex];
                 DisplayColumnAttribute dspColAttr = dbCol.DisplayColumn;
-                Type displayType = dspColAttr.FromType;
-                if (displayType == typeof(bool))
+                if (string.IsNullOrWhiteSpace(dspColAttr.Format))
                 {
-                    bool b = false;
-                    if (bool.TryParse(e.Value.ToString(), out b))
+                    Type displayType = dspColAttr.FromType;
+                    if (displayType == typeof(bool))
                     {
-                        e.Value = b ? "是" : "否";
+                        bool b = false;
+                        if (bool.TryParse(e.Value.ToString(), out b))
+                        {
+                            e.Value = b ? "是" : "否";
+                        }
+                        else
+                        {
+                            e.Value = b ? "是" : "否";
+                        }
                     }
-                    else
+                    else if (displayType == typeof(string) || displayType == typeof(int) || displayType == typeof(float))
                     {
-                        e.Value = b ? "是" : "否";
+                        e.Value = e.Value.ToString();
+                    }
+                    else if (displayType == typeof(UserRole))
+                    {
+                        e.Value = ((UserRole)e.Value).ToString("G");
+                    }
+                    else if (displayType == typeof(SchoolType))
+                    {
+                        e.Value = ((SchemaType)e.Value).ToString("G");
+                    }
+                    else if (displayType == typeof(SchoolGrades))
+                    {
+                        e.Value = ((SchoolGrades)e.Value).ToString("G");
+                    }
+                    else if (displayType == typeof(Semesters))
+                    {
+                        e.Value = ((Semesters)e.Value).ToString("G");
+                    }
+                    else if (displayType == typeof(EditState))
+                    {
+                        e.Value = ((EditState)e.Value).ToString("G");
+                    }
+                    else if (displayType == typeof(ReleaseState))
+                    {
+                        e.Value = ((ReleaseState)e.Value).ToString("G");
+                    }
+                    else if (displayType == typeof(AnswerMode))
+                    {
+                        e.Value = ((AnswerMode)e.Value).ToString("G");
                     }
                 }
-                else if (displayType == typeof(string) || displayType == typeof(int) || displayType == typeof(float))
-                {
-                    e.Value = e.Value.ToString();
-                }
-                else if (displayType == typeof(UserRole))
-                {
-                    e.Value = ((UserRole)e.Value).ToString("G");
-                }
-                else if (displayType == typeof(SchoolType))
-                {
-                    e.Value = ((SchemaType)e.Value).ToString("G");
-                }
-                else if (displayType == typeof(SchoolGrades))
-                {
-                    e.Value = ((SchoolGrades)e.Value).ToString("G");
-                }
-                else if (displayType == typeof(Semesters))
-                {
-                    e.Value = ((Semesters)e.Value).ToString("G");
-                }
-                else if (displayType == typeof(EditState))
-                {
-                    e.Value = ((EditState)e.Value).ToString("G");
-                }
-                else if (displayType == typeof(ReleaseState))
-                {
-                    e.Value = ((ReleaseState)e.Value).ToString("G");
-                }
-                else if (displayType == typeof(AnswerMode))
-                {
-                    e.Value = ((AnswerMode)e.Value).ToString("G");
+                else {
+                    e.Value = string.Format(dspColAttr.Format, e.Value);
+                    //Console.WriteLine("Formatted");
                 }
             }
             e.FormattingApplied = true;
@@ -285,7 +299,20 @@ namespace LearnLibs
         public DisplayScenes CurrentScenes
         {
             get { return _currentScenes; }
-            set { _currentScenes = value; }
+            set
+            {
+                if (_currentScenes != value)
+                {
+                    _currentScenes = value;
+                    buildGridColumns();
+                }
+            }
+        }
+
+        public ModelEditorAttribute ModelEditor
+        {
+            get;
+            internal set;
         }
 
         /// <summary>
@@ -383,11 +410,13 @@ namespace LearnLibs
             }
         }
 
-        public bool ContainField(string fieldName) {
+        public bool ContainField(string fieldName)
+        {
             bool r = false;
             foreach (ModelDbItem item in Columns)
             {
-                if (item.FieldName == fieldName) {
+                if (item.FieldName == fieldName)
+                {
                     r = true;
                     break;
                 }
@@ -435,6 +464,21 @@ namespace LearnLibs
         public bool CheckData(object obj)
         {
             return true;
+        }
+
+        public ModelDbItem GetForeignKey(Type type)
+        {
+            if (HasForeignKeyColumns)
+            {
+                foreach (ModelDbItem item in ForeignKeyColumns)
+                {
+                    if (item.ForeignKey.Type == type)
+                    {
+                        return item;
+                    }
+                }
+            }
+            return null;
         }
         #endregion
 

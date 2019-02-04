@@ -1,75 +1,106 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Data;
 using System.Collections;
+using System.Data;
 
 namespace LearnLibs
 {
     public class WhereArg
     {
+        private object _value = null;
         public string Field { get; set; }
-        public object Value { get; set; }
+        public object Value { get { return _value; } set { _value = value; } }
 
-        public string ToWhereString()
+        void convertValue()
         {
-            if (!string.IsNullOrWhiteSpace(Field) && Value != null)
+            if (_value != null)
             {
-                Type t = Value.GetType();
-                if (t == typeof(Guid))
+                Type vt = _value.GetType();
+                if (vt == typeof(DataRow))
                 {
-                    return "UPPER(HEX(" + Field + "))='" + F.byteToHexStr(((Guid)Value).ToByteArray()) + "'";
+                    DataRow row = (DataRow)_value;
+                    if (row.Table.Columns.Contains(Field))
+                    {
+                        _value = row[Field];
+                    }
                 }
-                else if (t == typeof(string))
-                {
-                    return Field + "='" + Value.ToString() + "'";
-                }
-                else if (t.IsEnum)
-                {
-                    return Field + "=" + ((int)Value).ToString();
-                }
-                else
-                {
-                    return Field + "=" + Value.ToString();
-                }
-            }
-            else
-            {
-                return string.Empty;
             }
         }
 
-        public string ToRowFilterString()
+        public string Where
         {
-            if (!string.IsNullOrWhiteSpace(Field) && Value != null)
+            get
             {
-                Type t = Value.GetType();
-                if (t == typeof(Guid))
+                convertValue();
+                if (!string.IsNullOrWhiteSpace(Field) && Value != null)
                 {
-                    return "Convert(" + Field + ",'System.String')='" + ((Guid)Value).ToString() + "'";
-                }
-                else if (t.IsEnum)
-                {
-                    return Field + "=" + ((int)Value).ToString();
-                }
-                else if (t == typeof(string))
-                {
-                    return Field + "='" + Value.ToString() + "'";
+                    Type t = Value.GetType();
+                    if (t == typeof(Guid))
+                    {
+                        return "UPPER(HEX(a." + Field + "))='" + F.byteToHexStr(((Guid)Value).ToByteArray()) + "'";
+                    }
+                    else if (t == typeof(string))
+                    {
+                        return "a." + Field + "='" + Value.ToString() + "'";
+                    }
+                    else if (t.IsEnum)
+                    {
+                        return "a." + Field + "=" + ((int)Value).ToString();
+                    }
+                    else if (t == typeof(bool))
+                    {
+                        return "a." + Field + "=" + ((bool)Value ? "1" : "0");
+                    }
+                    else
+                    {
+                        return "a." + Field + "=" + Value.ToString();
+                    }
                 }
                 else
                 {
-                    return Field + "=" + Value.ToString();
+                    return string.Empty;
                 }
             }
-            else
+        }
+
+        public string RowFilter
+        {
+            get
             {
-                return string.Empty;
+                convertValue();
+                if (!string.IsNullOrWhiteSpace(Field) && Value != null)
+                {
+                    Type t = Value.GetType();
+                    if (t == typeof(Guid))
+                    {
+                        return "Convert(" + Field + ",'System.String')='" + ((Guid)Value).ToString() + "'";
+                    }
+                    else if (t.IsEnum)
+                    {
+                        return Field + "=" + ((int)Value).ToString();
+                    }
+                    else if (t == typeof(string))
+                    {
+                        return Field + "='" + Value.ToString() + "'";
+                    }
+                    else if (t == typeof(bool))
+                    {
+                        return Field + "=" + ((bool)Value ? "1" : "0");
+                    }
+                    else
+                    {
+                        return Field + "=" + Value.ToString();
+                    }
+                }
+                else
+                {
+                    return string.Empty;
+                }
             }
         }
 
         public WhereArg() { }
-        public WhereArg(string fieldName, object value) {
+        public WhereArg(string fieldName, object value)
+        {
             this.Field = fieldName;
             this.Value = value;
         }
@@ -96,47 +127,72 @@ namespace LearnLibs
         }
     }
 
-    public class WhereArgs : CollectionBase {
-        public void Add(WhereArg arg) {
+    public class WhereArgs : CollectionBase
+    {
+        public void Add(WhereArg arg)
+        {
             this.List.Add(arg);
         }
-        public WhereArg this[int index] {
-            get {
-                if (index < List.Count && index >= 0) {
+        public void Add(string field, object value)
+        {
+            this.List.Add(new WhereArg(field, value));
+        }
+        public void Add(string field, DataRow r)
+        {
+            WhereArg arg = WhereArg.BuildFromDataRow(r, field);
+            this.List.Add(arg);
+        }
+
+        public WhereArg this[int index]
+        {
+            get
+            {
+                if (index < List.Count && index >= 0)
+                {
                     return (WhereArg)List[index];
                 }
                 return null;
             }
         }
 
-        public string ToWhereString() {
-            string r = string.Empty;
-            foreach (WhereArg w in List)
+        public string Where
+        {
+            get
             {
-                if (string.IsNullOrWhiteSpace(r))
+                string r = string.Empty;
+                foreach (WhereArg w in List)
                 {
-                    r = w.ToWhereString();
+                    if (string.IsNullOrWhiteSpace(r))
+                    {
+                        r = w.Where;
+                    }
+                    else
+                    {
+                        r += " AND " + w.Where;
+                    }
                 }
-                else {
-                    r += " AND " + w.ToWhereString();
-                }
+                return r;
             }
-            return r;
         }
 
-        public string ToRowFilterString() {
-            string r = string.Empty;
-            foreach (WhereArg w in List)
+        public string RowFilter
+        {
+            get
             {
-                if (string.IsNullOrWhiteSpace(r))
+                string r = string.Empty;
+                foreach (WhereArg w in List)
                 {
-                    r = w.ToRowFilterString();
+                    if (string.IsNullOrWhiteSpace(r))
+                    {
+                        r = w.RowFilter;
+                    }
+                    else
+                    {
+                        r += " AND " + w.RowFilter;
+                    }
                 }
-                else {
-                    r += " AND " + w.ToRowFilterString();
-                }
+                return r;
             }
-            return r;
         }
     }
 }

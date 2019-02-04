@@ -56,31 +56,69 @@
     <Compile Include="Controls\FormDialog.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Controls\FormDialog.Designer.cs" />
+    <Compile Include="Controls\FormDialog.Designer.cs">
+      <DependentUpon>FormDialog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmArea.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmArea.Designer.cs">
+      <DependentUpon>frmArea.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmCategory.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmCategory.Designer.cs">
+      <DependentUpon>frmCategory.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmPress.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmPress.Designer.cs">
+      <DependentUpon>frmPress.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmTeachBook.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmTeachBook.Designer.cs">
+		<DependentUpon>frmTeachBook.cs</DependentUpon>
+	</Compile>
     <Compile Include="Controls\LabelControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\LabelControl.Designer.cs" />
+    <Compile Include="Controls\LabelControl.Designer.cs">
+      <DependentUpon>LabelControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\LB.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\LB.Designer.cs" />
+    <Compile Include="Controls\LB.Designer.cs">
+      <DependentUpon>LB.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\LCB.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\LCB.Designer.cs" />
+    <Compile Include="Controls\LCB.Designer.cs">
+      <DependentUpon>LCB.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\LDT.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\LDT.Designer.cs" />
+    <Compile Include="Controls\LDT.Designer.cs">
+      <DependentUpon>LDT.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\LTB.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\LTB.Designer.cs" />
+    <Compile Include="Controls\LTB.Designer.cs">
+      <DependentUpon>LTB.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\SelectRoles.cs">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Include="Controls\SelectRoles.Designer.cs" />
+    <Compile Include="Controls\SelectRoles.Designer.cs">
+      <DependentUpon>SelectRoles.cs</DependentUpon>
+    </Compile>
     <Compile Include="Enums.cs" />
     <Compile Include="Exceptions.cs" />
     <Compile Include="Functions.cs" />
@@ -94,13 +132,39 @@
     <Compile Include="WhereArg.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Controls\FormDialog.resx" />
-    <EmbeddedResource Include="Controls\LabelControl.resx" />
-    <EmbeddedResource Include="Controls\LB.resx" />
-    <EmbeddedResource Include="Controls\LCB.resx" />
-    <EmbeddedResource Include="Controls\LDT.resx" />
-    <EmbeddedResource Include="Controls\LTB.resx" />
-    <EmbeddedResource Include="Controls\SelectRoles.resx" />
+    <EmbeddedResource Include="Controls\FormDialog.resx">
+      <DependentUpon>FormDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmArea.resx">
+      <DependentUpon>frmArea.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmCategory.resx">
+      <DependentUpon>frmCategory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmPress.resx">
+      <DependentUpon>frmPress.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmTeachBook.resx">
+		<DependentUpon>frmTeachBook.cs</DependentUpon>
+	</EmbeddedResource>
+    <EmbeddedResource Include="Controls\LabelControl.resx">
+      <DependentUpon>LabelControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LB.resx">
+      <DependentUpon>LB.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LCB.resx">
+      <DependentUpon>LCB.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LDT.resx">
+      <DependentUpon>LDT.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LTB.resx">
+      <DependentUpon>LTB.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\SelectRoles.resx">
+      <DependentUpon>SelectRoles.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
