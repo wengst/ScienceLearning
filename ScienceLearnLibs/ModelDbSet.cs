@@ -18,29 +18,6 @@ namespace LearnLibs
         #endregion
 
         #region private motheds
-        /// <summary>
-        /// 连接2个字符串，中间用seq字符串分隔
-        /// </summary>
-        /// <param name="frontStr">分隔符前面的字符串</param>
-        /// <param name="backStr">分隔符后面的字符串</param>
-        /// <param name="seq">分隔字符串</param>
-        /// <returns></returns>
-        static string joinString(string frontStr, string backStr, string seq)
-        {
-            if (!string.IsNullOrWhiteSpace(backStr) && seq != null && seq != string.Empty && seq != "")
-            {
-                if (string.IsNullOrWhiteSpace(frontStr))
-                {
-                    return backStr;
-                }
-                else
-                {
-                    return frontStr + seq + backStr;
-                }
-            }
-            return frontStr;
-        }
-
         static T getAttribute<T>(Type type) where T : Attribute
         {
             if (type == null) return null;
@@ -63,6 +40,53 @@ namespace LearnLibs
             return null;
         }
 
+        static string getGridColumnName<T>(int colIndex) where T : BaseModel, new()
+        {
+            ModelDb md = ModelDbs[typeof(T)];
+            DataGridView grid = md.Grid;
+            if (grid.Columns.Count > colIndex)
+            {
+                return grid.Columns[colIndex].DataPropertyName;
+            }
+            return string.Empty;
+        }
+        static string getGridColumnName(Type type, int colIndex)
+        {
+            if (isBaseModel(type))
+            {
+                ModelDb md = ModelDbs[type];
+                DataGridView grid = md.Grid;
+                if (grid.Columns.Count > colIndex)
+                {
+                    return grid.Columns[colIndex].DataPropertyName;
+                }
+            }
+            return string.Empty;
+        }
+
+        static ModelField getModelField<T>(int colIndex) where T : BaseModel, new()
+        {
+            string colName = getGridColumnName<T>(colIndex);
+            if (!string.IsNullOrWhiteSpace(colName))
+            {
+                return ModelDbs[typeof(T)].ModelTableInfo[colName];
+            }
+            return null;
+        }
+
+        static ModelField getModelField(Type type, int colIndex)
+        {
+            if (isBaseModel(type))
+            {
+                string colName = getGridColumnName(type, colIndex);
+                if (!string.IsNullOrWhiteSpace(colName))
+                {
+                    return ModelDbs[type].ModelTableInfo[colName];
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         /// 获取类型是否是BaseModel的派生类
         /// </summary>
@@ -74,6 +98,9 @@ namespace LearnLibs
             return BaseModel.IsSubclass(t);
         }
 
+        /// <summary>
+        /// 获取本应用程序集中所有BaseModel的派生类
+        /// </summary>
         static void getDerivedTypes()
         {
             _tts = new Dictionary<Type, ModelDb>();
@@ -89,12 +116,16 @@ namespace LearnLibs
             foreach (KeyValuePair<Type, ModelDb> kv in _tts)
             {
                 ModelDb md = kv.Value;
+                md.ModelTableInfo.MainTable = md.TableName;
                 foreach (ModelDbItem m in md.Columns)
                 {
-                    if (m.IsDisplayColumn && m.IsForeignKey && isBaseModel(m.DisplayColumn.FromType) && isBaseModel(m.ForeignKey.Type) && m.ForeignKey.Type == m.DisplayColumn.FromType)
+                    bool dc = m.IsDisplayColumn;
+                    bool fk = m.IsForeignKey;
+                    md.ModelTableInfo.Add(m.FieldName);
+                    if (dc && fk && isBaseModel(m.DisplayColumn.FromType) && isBaseModel(m.ForeignKey.Type) && m.ForeignKey.Type == m.DisplayColumn.FromType)
                     {
-                        PropertyTable pt = new PropertyTable(m.Property, _tts[m.DisplayColumn.FromType].TableName);
-                        md.PTC.Add(pt);
+                        ModelDb om = ModelDbs[m.DisplayColumn.FromType];
+                        md.ModelTableInfo.Add(m.FieldName, om.TableName, m.ForeignKey.Field, m.DisplayColumn.Field);
                     }
                 }
                 //Console.WriteLine(kv.Key.Name + "有" + md.PTC.List.Count.ToString());
@@ -149,12 +180,34 @@ namespace LearnLibs
         {
             if (type == null) return;
             if (!BaseModel.IsSubclass(type)) return;
-            Console.WriteLine(getSelectSqlNoWhere(type));
-            ModelDb md = ModelDbs[type];
             string selectSql = getSelectSqlNoWhere(type);
+            Console.WriteLine(selectSql);
+            ModelDb md = ModelDbs[type];
             if (!string.IsNullOrWhiteSpace(where))
             {
                 selectSql += " WHERE " + where;
+            }
+            if (!string.IsNullOrWhiteSpace(orderby))
+            {
+                selectSql += " ORDER BY " + orderby;
+            }
+            using (SQLiteCommand cmd = new SQLiteCommand(selectSql, Connection))
+            {
+                using (SQLiteDataAdapter sda = new SQLiteDataAdapter(cmd))
+                {
+                    sda.Fill(AppDataSet, md.TableName);
+                }
+            }
+        }
+
+        static void fillRows<T>(WhereArgs args, string orderby) where T : BaseModel, new()
+        {
+            Type type = typeof(T);
+            string selectSql = getSelectSqlNoWhere(type);
+            ModelDb md = ModelDbs[type];
+            if (args != null)
+            {
+                selectSql += " WHERE " + args.Where;
             }
             if (!string.IsNullOrWhiteSpace(orderby))
             {
@@ -174,52 +227,36 @@ namespace LearnLibs
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
-        static string getSelectSqlNoWhere(Type type)
+        static string getSelectSqlNoWhere(Type type, JoinType joinType = JoinType.Left)
         {
             if (isBaseModel(type))
             {
-                string joinTableStr = "LEFT JOIN {0} AS {1} ON {1}.{2}=a.{3}";
-                string joinFieldStr = "{0}.{1} as {2}";
-                string[] joinTableAry = null;
-                string[] joinFieldAry = null;
-
-                ModelDb me = ModelDbs[type];
-                List<ModelDbItem> Columns = me.Columns;
-                string TableName = me.TableName;
-                string joins = "";
-                string fields = "";
-                foreach (ModelDbItem item in Columns)
+                switch (joinType)
                 {
-                    fields = joinString(fields, string.Format(joinFieldStr, new object[] { "a", item.FieldName, item.FieldName }), ",");
-
-                    if (item.IsDisplayColumn && isBaseModel(item.DisplayColumn.FromType))
-                    {
-                        joinTableAry = new string[4];
-                        joinFieldAry = new string[3];
-                        PropertyInfo p = item.Property;
-                        string tAlias = me.PTC.TableAlias(p);
-                        string tName = me.PTC.TableName(p);
-                        if (!string.IsNullOrWhiteSpace(tAlias))
-                        {
-                            joinTableAry[0] = tName;
-                            joinTableAry[1] = tAlias;
-                            joinTableAry[2] = item.ForeignKey.Field;
-                            joinTableAry[3] = item.FieldName;
-
-                            joinFieldAry[0] = tAlias;
-                            joinFieldAry[1] = item.DisplayColumn.Field;
-                            joinFieldAry[2] = item.AsField;
-                            fields = joinString(fields, string.Format(joinFieldStr, joinFieldAry), ",");
-                            joins = joinString(joins, string.Format(joinTableStr, joinTableAry), " ");
-                            var i = 0;
-                            Console.WriteLine("joins" + joins);
-                        }
-                    }
+                    case JoinType.Inner:
+                        return ModelDbs[type].ModelTableInfo.InnerJoinSelectSql;
+                    case JoinType.Right:
+                        return ModelDbs[type].ModelTableInfo.RightJoinSelectSql;
+                    case JoinType.Left:
+                    default:
+                        return ModelDbs[type].ModelTableInfo.LeftJoinSelectSql;
                 }
-                Console.WriteLine("JOIN=" + joins);
-                return "SELECT " + fields + " FROM " + TableName + " AS a " + joins;
             }
             return string.Empty;
+        }
+
+        static string getSelectSql<T>(JoinType joinType) where T : BaseModel, new()
+        {
+            switch (joinType)
+            {
+                case JoinType.Inner:
+                    return ModelDbs[typeof(T)].ModelTableInfo.InnerJoinSelectSql;
+                case JoinType.Right:
+                    return ModelDbs[typeof(T)].ModelTableInfo.RightJoinSelectSql;
+                case JoinType.Left:
+                default:
+                    return ModelDbs[typeof(T)].ModelTableInfo.LeftJoinSelectSql;
+            }
         }
 
         /// <summary>
@@ -239,7 +276,7 @@ namespace LearnLibs
                     {
                         if (dbItem.OrderBy.OrderType != SortOrder.None)
                         {
-                            order = joinString(order, dbItem.GetOrder(), ",");
+                            order = F.JoinString(order, dbItem.GetOrder(), ",");
                         }
                     }
                 }
@@ -262,11 +299,11 @@ namespace LearnLibs
                     ModelDbItem dbItem = Columns[i];
                     if (dbItem.IsPrimaryKey)
                     {
-                        where = joinString(where, dbItem.FieldName + "=" + dbItem.ParameterName, ",");
+                        where = F.JoinString(where, dbItem.FieldName + "=" + dbItem.ParameterName, ",");
                     }
                     else
                     {
-                        fields = joinString(fields, dbItem.FieldName + "=" + dbItem.ParameterName, ",");
+                        fields = F.JoinString(fields, dbItem.FieldName + "=" + dbItem.ParameterName, ",");
                     }
                 }
                 updateStr = string.Format("UPDATE {0} SET {1} WHERE {2}", new object[] { tableName, fields, where });
@@ -342,8 +379,8 @@ namespace LearnLibs
                 for (int i = 0; i < Columns.Count; i++)
                 {
                     ModelDbItem dbItem = Columns[i];
-                    fields = joinString(fields, dbItem.FieldName, ",");
-                    parameters = joinString(parameters, dbItem.ParameterName, ",");
+                    fields = F.JoinString(fields, dbItem.FieldName, ",");
+                    parameters = F.JoinString(parameters, dbItem.ParameterName, ",");
                 }
                 return string.Format("INSERT INTO {0} ({1}) VALUES ({2})", new object[] { tableName, fields, parameters });
             }
@@ -367,7 +404,7 @@ namespace LearnLibs
                 for (int i = 0; i < Columns.Count; i++)
                 {
                     ModelDbItem dbItem = Columns[i];
-                    where = joinString(where, dbItem.FieldName + "=" + dbItem.ParameterName, " AND ");
+                    where = F.JoinString(where, dbItem.FieldName + "=" + dbItem.ParameterName, " AND ");
                 }
                 return string.Format("DELETE FROM {0} WHERE {1}", new object[] { tableName, where });
             }
@@ -405,7 +442,7 @@ namespace LearnLibs
                     {
                         s += " UNIQUE";
                     }
-                    createTableStr = joinString(createTableStr, s, ",");
+                    createTableStr = F.JoinString(createTableStr, s, ",");
                 }
                 //如果表主键包含多个字段
                 if (md.HasPrimaryColumn && primaryKeyCount > 1)
@@ -414,7 +451,7 @@ namespace LearnLibs
                     string primaryKeys = string.Empty;
                     foreach (ModelDbItem dbItem in md.PrimaryKeyColumn.Columns)
                     {
-                        primaryKeys = joinString(primaryKeys, dbItem.FieldName, ",");
+                        primaryKeys = F.JoinString(primaryKeys, dbItem.FieldName, ",");
                     }
                     createTableStr += primaryKeys + ")";
                 }
@@ -471,6 +508,54 @@ namespace LearnLibs
         #endregion
 
         #region public methods
+        /// <summary>
+        /// 根据
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="colIndex"></param>
+        /// <param name="rowIndex"></param>
+        /// <returns></returns>
+        public static string GetCellValue<T>(int colIndex, int rowIndex) where T : BaseModel, new()
+        {
+            return GetCellValue(typeof(T), colIndex, rowIndex);
+        }
+
+        public static string GetCellValue(Type type, int colIndex, int rowIndex)
+        {
+            if (isBaseModel(type))
+            {
+                ModelField mf = getModelField(type, colIndex);
+                if (mf != null && !string.IsNullOrWhiteSpace(mf.JoinTableName))
+                {
+                    DataGridView grid = ModelDbs[type].Grid;
+                    object dataSource = grid.DataSource;
+                    DataRow row = null;
+                    if (dataSource != null)
+                    {
+                        Type dsType = dataSource.GetType();
+
+                        if (dsType == typeof(DataTable))
+                        {
+                            row = ((DataTable)dataSource).Rows[rowIndex];
+                        }
+                        else if (dsType == typeof(DataView))
+                        {
+                            row = ((DataView)dataSource)[rowIndex].Row;
+                        }
+                    }
+                    if (row != null && row.Table != null && row.Table.Columns.Contains(mf.SourceField))
+                    {
+                        object value = row[mf.SourceField];
+                        if (value != null)
+                        {
+                            return GetFieldString(mf.JoinTableName, mf.DisplayField, mf.ForeignKeyField, value);
+                        }
+                    }
+                }
+            }
+            return string.Empty;
+        }
+
         /// <summary>
         /// 检查是否引用了某个外键的值
         /// </summary>
@@ -537,19 +622,56 @@ namespace LearnLibs
         }
 
         /// <summary>
-        /// 行是否存在
+        /// 获取内存数据集中是否存在指定条件的数据
         /// </summary>
-        /// <param name="t"></param>
-        /// <param name="where"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="args"></param>
         /// <returns></returns>
-        public static bool RowIsExists(Type t, WhereArg where)
+        public static bool RowIsExists<T>(WhereArgs args) where T : BaseModel, new()
         {
-            if (t != null && BaseModel.IsSubclass(t))
+            Type t = typeof(T);
+            ModelDb md = ModelDbs[t];
+            if (args != null)
             {
-                DataView dv = GetDataView(t, where);
-                if (dv == null || dv.Count == 0) return false;
-                return true;
+                if (AppDataSet.Tables.Contains(md.TableName))
+                {
+                    DataTable dt = AppDataSet.Tables[md.TableName];
+                    foreach (WhereArg arg in args.Items)
+                    {
+                        if (!dt.Columns.Contains(arg.Field))
+                        {
+                            throw new Exception("字段不存在");
+                        }
+                    }
+                    return dt.Select(args.RowFilter).Length > 0;
+                }
             }
+            else
+            {
+                throw new ArgumentNullException("args");
+            }
+            return false;
+        }
+
+        public static bool RowIsExists(string tableName, WhereArgs args)
+        {
+            if (!string.IsNullOrWhiteSpace(tableName) && AppDataSet.Tables.Contains(tableName) && args != null)
+            {
+                DataTable dt = AppDataSet.Tables[tableName];
+                foreach (WhereArg arg in args.Items)
+                {
+                    if (!dt.Columns.Contains(arg.Field))
+                    {
+                        throw new Exception("字段不存在");
+                    }
+                }
+                return dt.Select(args.RowFilter).Length > 0;
+            }
+            if (string.IsNullOrWhiteSpace(tableName))
+            {
+                throw new ArgumentNullException("tableName");
+            }
+            if (args == null) throw new ArgumentNullException("args");
             return false;
         }
 
@@ -579,11 +701,15 @@ namespace LearnLibs
 
         public static DataView GetDataView<T>(WhereArgs where) where T : BaseModel, new()
         {
+            /*
+             * 选用DataView做DataGridView和TreeView的数据源，不用DataTable。 
+             */
             Type type = typeof(T);
             DataView dv = null;
 
             ModelDb md = ModelDbs[type];
-            if (!AppDataSet.Tables.Contains(md.TableName))
+            bool isexists = where == null ? false : RowIsExists<T>(where);
+            if (!AppDataSet.Tables.Contains(md.TableName) || !isexists)
             {
                 fillRows(type, where == null ? "" : where.Where);
             }
@@ -600,34 +726,19 @@ namespace LearnLibs
             return dv;
         }
 
-        public static DataView GetDataView(WhereArgs where, Type type)
-        {
-            DataView dv = null;
-            if (isBaseModel(type))
-            {
-                ModelDb md = ModelDbs[type];
-                if (!AppDataSet.Tables.Contains(md.TableName))
-                {
-                    fillRows(type, where == null ? "" : where.Where);
-                }
-                if (where == null)
-                {
-                    dv = AppDataSet.Tables[md.TableName].DefaultView;
-                }
-                else
-                {
-                    dv = new DataView();
-                    dv.Table = AppDataSet.Tables[md.TableName];
-                    dv.RowFilter = where.RowFilter;
-                }
-            }
-            return dv;
-        }
-
         public static void RefreshGrid<T>(WhereArgs args) where T : BaseModel, new()
         {
-            ModelDbs[typeof(T)].Grid.DataSource = GetDataView<T>(args);
-            ModelDbs[typeof(T)].Grid.Refresh();
+            ModelDb md = ModelDbs[typeof(T)];
+            md.Args = args;
+            md.Grid.DataSource = GetDataView<T>(args);
+            md.Grid.Refresh();
+        }
+
+        public static void RefreshGrid<T>(string whereField, object whereValue) where T : BaseModel, new()
+        {
+            WhereArg arg = new WhereArg(whereField, whereValue);
+            WhereArgs args = new WhereArgs() { arg };
+            RefreshGrid<T>(args);
         }
 
         /// <summary>
@@ -635,7 +746,7 @@ namespace LearnLibs
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static DataRow GetSelectedGridDataRow<T>() where T : BaseModel, new()
+        public static DataRow GetSelectedDataRow<T>() where T : BaseModel, new()
         {
             Type t = typeof(T);
             DataRow row = null;
@@ -669,9 +780,14 @@ namespace LearnLibs
             return row;
         }
 
-        public static T GetSelectedObjectAtGrid<T>() where T : BaseModel, new()
+        /// <summary>
+        /// 获取选定行的对象。
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static T GetObjectAtGrid<T>() where T : BaseModel, new()
         {
-            DataRow row = GetSelectedGridDataRow<T>();
+            DataRow row = GetSelectedDataRow<T>();
             if (row != null)
             {
                 return ToObj<T>(row);
@@ -1131,10 +1247,11 @@ namespace LearnLibs
         /// <param name="isNew">新增=true，修改=false</param>
         public static void ShowEditor<T>(Form owner, TreeNode selectedNode, T obj, bool isUpdateChildNodes) where T : BaseModel, new()
         {
+            if (obj == null) return;
             Type t = typeof(T);
             ModelDb md = ModelDbs[t];
             DataRow row = null;
-            bool isNew = obj.Id != Guid.Empty;
+            bool isNew = obj.Id == Guid.Empty;
             if (md.ModelEditor != null && md.ModelEditor.Editor.BaseType == typeof(FormDialog))
             {
                 FormDialog f = (FormDialog)Activator.CreateInstance(md.ModelEditor.Editor, null);
@@ -1145,8 +1262,11 @@ namespace LearnLibs
                 {
                     obj = (T)f.Object;
                     if (!CheckData<T>(obj)) return;
+
+                    obj.Id = Guid.NewGuid();
                     row = SaveDataRow<T>(obj, isNew);
-                    ModelDbs[t].Grid.Refresh();
+                    md.Grid.DataSource = GetDataView<T>(md.Args);
+                    md.Grid.Refresh();
                     if (selectedNode != null && isUpdateChildNodes)
                     {
                         if (isNew)
@@ -1176,7 +1296,7 @@ namespace LearnLibs
                 MessageBox.Show("请在表格中选择要删除的项", C.OperationPrompt, MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
-            DataRow row = GetSelectedGridDataRow<T>();
+            DataRow row = GetSelectedDataRow<T>();
             T obj = ToObj<T>(row);
             foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
             {
@@ -1200,6 +1320,35 @@ namespace LearnLibs
             }
         }
 
+        public static object GetFieldValue(string tableName, string fieldName, WhereArgs args)
+        {
+            if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(fieldName) && args != null)
+            {
+                if (!AppDataSet.Tables.Contains(tableName))
+                {
+                    fillRows(tableName, args.Where);
+                }
+                DataTable dt = AppDataSet.Tables[tableName];
+                if (dt.Columns.Contains(fieldName))
+                {
+                    DataRow[] rows = dt.Select(args.RowFilter);
+                    if (rows != null && rows.Length > 0)
+                    {
+                        DataRow row = rows[0];
+                        if (row.IsNull(fieldName))
+                        {
+                            return null;
+                        }
+                        else
+                        {
+                            return row[fieldName];
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
         /// <summary>
         /// 根据WhereArgs查询参数，获取泛型所对应表的相应字段值
         /// </summary>
@@ -1209,25 +1358,10 @@ namespace LearnLibs
         /// <returns></returns>
         public static object GetFieldValue<T>(string field, WhereArgs args) where T : BaseModel, new()
         {
-            if (string.IsNullOrWhiteSpace(field) && args == null) return null;
-            Type t = typeof(T);
-            ModelDb md = ModelDbs[t];
-            if (!AppDataSet.Tables.Contains(md.TableName))
+            if (!string.IsNullOrWhiteSpace(field) && args != null)
             {
-                fillRows(md.TableName, null);
-            }
-            DataRow[] rows = AppDataSet.Tables[md.TableName].Select(args.RowFilter);
-            if (rows != null && rows.Length > 0)
-            {
-                DataRow row = rows[0];
-                if (row.IsNull(field))
-                {
-                    return null;
-                }
-                else
-                {
-                    return row[field];
-                }
+                ModelDb md = ModelDbs[typeof(T)];
+                return GetFieldValue(md.TableName, field, args);
             }
             return null;
         }
@@ -1250,6 +1384,24 @@ namespace LearnLibs
             return GetFieldString<T>(returnField, new WhereArgs() { new WhereArg(findField, findValue) });
         }
 
+        public static string GetFieldString(string tableName, string returnField, string findField, object findValue)
+        {
+            if (!string.IsNullOrWhiteSpace(tableName) && !string.IsNullOrWhiteSpace(returnField) && findValue != null)
+            {
+                WhereArgs args = new WhereArgs();
+                args.Add(new WhereArg(findField, findValue));
+                object value = GetFieldValue(tableName, returnField, args);
+                if (value != null)
+                {
+                    return value.ToString();
+                }
+                else
+                {
+                    return string.Empty;
+                }
+            }
+            return string.Empty;
+        }
         /// <summary>
         /// 创建SQLite数据库
         /// </summary>

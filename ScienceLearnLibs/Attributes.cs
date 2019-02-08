@@ -415,5 +415,34 @@ namespace LearnLibs
             this.OrderType = orderBy;
         }
     }
+
+    /// <summary>
+    /// 模型表的XML特性
+    /// </summary>
+    public class ModelTableXml : Attribute {
+        public string ItemName { get; set; }
+        public string ListName { get; set; }
+        public ModelTableXml() { }
+        /// <summary>
+        /// 以列表名和单项名实例化ModelTable特性
+        /// </summary>
+        /// <param name="collName"></param>
+        /// <param name="itemName"></param>
+        public ModelTableXml(string collName, string itemName) {
+            this.ListName = collName;
+            this.ItemName = itemName;
+        }
+    }
+
+    /// <summary>
+    /// 模型属性的XML特性
+    /// </summary>
+    public class ModelFieldXml : Attribute {
+        public string AttrName { get; set; }
+        public ModelFieldXml() { }
+        public ModelFieldXml(string attrname) {
+            this.AttrName = attrname;
+        }
+    }
     #endregion
 }

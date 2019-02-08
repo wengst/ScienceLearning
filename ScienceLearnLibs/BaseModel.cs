@@ -65,7 +65,31 @@ namespace LearnLibs
             public const string Difficult = "Difficult";
             public const string Score = "Score";
         }
-
+        public class EL {
+            public const string Presses = "presses";
+            public const string Press = "press";
+            public const string Area = "areas";
+            public const string Code = "code";
+            public const string Name = "name";
+            public const string ParentId = "parentId";
+            public const string Text = "text";
+            /// <summary>
+            /// 是否市辖区
+            /// </summary>
+            public const string isXQ = "IsXQ";
+            public const string TeachBook = "teachbook";
+            public const string TeachBooks = "teachbooks";
+            public const string TeachBookId = "teachbookid";
+            public const string Category = "category";
+            public const string Categorys = "categorys";
+            public const string FullName = "fullname";
+            public const string ShortName = "shortname";
+            public const string Index = "index";
+            public const string ImplementDate = "implement";
+            public const string PressId = "pressid";
+            public const string SchoolGrade = "grade";
+            public const string Semester = "semester";
+        }
         #region private fields
         private Guid _id = Guid.Empty;
         private bool _inServer = false;

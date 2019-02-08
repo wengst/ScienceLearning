@@ -376,6 +376,7 @@ namespace LearnLibs.Models
     [DbTable("learn_Presses")]
     [ListItem(FN.Id, FN.FullName)]
     [ModelEditor(typeof(frmPress))]
+    [ModelTableXml(EL.Presses,EL.Press)]
     public class Press : BaseModel
     {
         /// <summary>
@@ -383,15 +384,18 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.Code, DbType.AnsiStringFixedLength, 2, Index = 1, IsAllowNull = false, DefaultValue = "01")]
         [DisplayColumn("代码", 0, FillWeight = 20)]
+        [ModelFieldXml(EL.Code)]
         public string Code { get; set; }
 
         [DbColumn(FN.FullName, DbType.String, 16, Index = 2, IsAllowNull = false)]
         [DisplayColumn("全名", 1, FillWeight = 50)]
         [TreeNodeColumn(true)]
+        [ModelFieldXml(EL.FullName)]
         public string FullName { get; set; }
 
         [DbColumn(FN.ShortName, DbType.String, 4, Index = 3, IsAllowNull = false)]
         [DisplayColumn("简称", 2, FillWeight = 30)]
+        [ModelFieldXml(EL.ShortName)]
         public string ShortName { get; set; }
 
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
@@ -406,7 +410,6 @@ namespace LearnLibs.Models
         public TeachBook CreateNewBook()
         {
             TeachBook tb = new TeachBook();
-            
             tb.PressId = this.Id;
             tb.SchoolGrade = SchoolGrades.七年级;
             tb.Semester = Semesters.第一学期;
@@ -422,6 +425,7 @@ namespace LearnLibs.Models
     [DbTable("learn_TeachBooks")]
     [ListItem(FN.Id, FN.ShortName)]
     [ModelEditor(typeof(frmTeachBook))]
+    [ModelTableXml(EL.TeachBooks, EL.TeachBook)]
     public class TeachBook : BaseModel
     {
         /// <summary>
@@ -430,6 +434,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Press), FN.Id)]
         [DisplayColumn("出版社", 7, typeof(Press), BaseModel.FN.ShortName, FillWeight = 30)]
+        [ModelFieldXml(EL.PressId)]
         public Guid PressId { get; set; }
 
         /// <summary>
@@ -438,6 +443,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.FullName, DbType.String, 16, Index = 2, IsAllowNull = false)]
         [DisplayColumn("全名", 1)]
         [TreeNodeColumn(true)]
+        [ModelFieldXml(EL.FullName)]
         public string FullName { get; set; }
 
         /// <summary>
@@ -445,6 +451,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ShortName, DbType.String, 6, Index = 3, IsAllowNull = false)]
         [DisplayColumn("简称", 2)]
+        [ModelFieldXml(EL.ShortName)]
         public string ShortName { get; set; }
 
         /// <summary>
@@ -452,6 +459,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.SchoolGrade, DbType.Int32, Index = 4, IsAllowNull = false, DefaultValue = (int)SchoolGrades.七年级)]
         [DisplayColumn("适应年级", 3, FromType = typeof(SchoolGrades))]
+        [ModelFieldXml(EL.SchoolGrade)]
         public SchoolGrades SchoolGrade { get; set; }
 
         /// <summary>
@@ -459,6 +467,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.Semester, DbType.Int32, Index = 5, IsAllowNull = false, DefaultValue = (int)Semesters.第一学期)]
         [DisplayColumn("适应学期", 4, FromType = typeof(Semesters))]
+        [ModelFieldXml(EL.Semester)]
         public Semesters Semester { get; set; }
 
         /// <summary>
@@ -466,6 +475,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ImplementDate, DbType.DateTime, Index = 6, IsAllowNull = false, DefaultValue = "2013-09-01 00:00:00")]
         [DisplayColumn("实施日期", 5, Format = "{0:yyyy-MM-dd}")]
+        [ModelFieldXml(EL.ImplementDate)]
         public DateTime ImplementDate { get; set; }
 
         public TeachBook()
@@ -500,6 +510,7 @@ namespace LearnLibs.Models
     [DbTable("learn_Categorys")]
     [ListItem(FN.Id, FN.Text)]
     [ModelEditor(typeof(frmCategory))]
+    [ModelTableXml(EL.Categorys,EL.Category)]
     public class Category : BaseModel
     {
         private Guid _parentId = Guid.Empty;
@@ -508,6 +519,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Press), FN.Id)]
+        [ModelFieldXml(EL.PressId)]
         public Guid PressId { get; set; }
 
         /// <summary>
@@ -515,6 +527,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.TeachBookId, DbType.Guid, 16, Index = 2, IsAllowNull = false)]
         [ForeignKey(typeof(TeachBook), FN.Id)]
+        [ModelFieldXml(EL.TeachBookId)]
         public Guid TeachBookId { get; set; }
 
         /// <summary>
@@ -522,6 +535,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ParentId, DbType.Guid, 16, Index = 3, IsAllowNull = false)]
         [ForeignKey(typeof(Category), FN.Id)]
+        [ModelFieldXml(EL.ParentId)]
         public Guid ParentId { get { return _parentId; } set { _parentId = value; } }
 
         /// <summary>
@@ -529,6 +543,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.IndexNo, DbType.Int16, Index = 4, IsAllowNull = false, DefaultValue = 1)]
         [DisplayColumn("序号", 1)]
+        [ModelFieldXml(EL.Index)]
         [OrderBy(SortOrder.Ascending)]
         public int Index { get; set; }
 
@@ -538,6 +553,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.Text, DbType.String, 16, Index = 5, IsAllowNull = false)]
         [DisplayColumn("单元", 2)]
         [TreeNodeColumn(true)]
+        [ModelFieldXml(EL.Text)]
         public string Text { get; set; }
 
         /// <summary>

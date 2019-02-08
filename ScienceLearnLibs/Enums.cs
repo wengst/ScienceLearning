@@ -6,6 +6,11 @@ using System.ComponentModel;
 
 namespace LearnLibs.Enums
 {
+    public enum JoinType { 
+        Left,
+        Inner,
+        Right
+    }
     public enum WhereTarget { 
         SQLite,
         SQLClient,

@@ -108,43 +108,6 @@ namespace LearnLibs
         #endregion
 
         #region public methods
-        public SQLiteParameter GetParameterByForeignKey(object obj)
-        {
-            if (obj == null) throw new ArgumentNullException("obj");
-            if (!IsForeignKey) throw new NotContainAttributeException(typeof(ForeignKeyAttribute));
-            Type t = obj.GetType();
-            SQLiteParameter parameter = null;
-            if (BaseModel.IsSubclass(t) && ForeignKey.Type == t)
-            {
-                parameter = new SQLiteParameter();
-                parameter.ParameterName = this.ParameterName;
-                parameter.DbType = DataType;
-                parameter.Size = this.Size;
-                parameter.Value = Property.GetValue(obj, null);
-            }
-            if (t == typeof(DataRow))
-            {
-                string name1 = F.GetTableName(_foreignKey.Type);
-                string name2 = ((DataRow)obj).Table.TableName;
-                if (name1 == name2)
-                {
-                    parameter = new SQLiteParameter();
-                    parameter.ParameterName = this.ParameterName;
-                    parameter.DbType = this.DataType;
-                    parameter.Size = this.Size;
-                    parameter.Value = ((DataRow)obj)[this.FieldName];
-                }
-            }
-            if (t.IsValueType || t == typeof(string))
-            {
-                parameter = new SQLiteParameter();
-                parameter.ParameterName = this.ParameterName;
-                parameter.DbType = this.DataType;
-                parameter.Size = this.Size;
-                parameter.Value = obj;
-            }
-            return parameter;
-        }
 
         /// <summary>
         /// 获取该数据列的Order By表达式：FieldName ASC|DESC

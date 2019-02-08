@@ -1,40 +1,176 @@
 ﻿using System.Collections.Generic;
-
+using System.Reflection;
+using System;
 namespace LearnLibs
 {
     /// <summary>
-    /// 属性名与表名关系对应类型
+    /// 属性名与表名关系对应类型。仅支持右表为主表的情况。
     /// </summary>
-    public class PropertyTable
+    public class ModelField
     {
-        public string PropertyName { get; set; }
-        public string TableName { get; set; }
-        public PropertyTable(string propertyName, string tableName) {
-            if (!string.IsNullOrWhiteSpace(propertyName) && !string.IsNullOrWhiteSpace(tableName)) {
-                this.PropertyName = propertyName;
-                this.TableName = tableName;
+        #region private fields
+        string _joinTableName = string.Empty;
+        string _joinTableAlias = string.Empty;
+        string _sourceField = string.Empty;
+        string _joinField = string.Empty;
+        string _displayField = string.Empty;
+        internal ModelTable _mainTable = null;
+        #endregion
+        public ModelTable Table { get { return _mainTable; } }
+        /// <summary>
+        /// 获取Join表名称
+        /// </summary>
+        public string JoinTableName { get { return _joinTableName; } }
+        /// <summary>
+        /// 获取Join表别名
+        /// </summary>
+        public string JoinTableAlias { get { return _joinTableAlias; } set { _joinTableAlias = value; } }
+
+        /// <summary>
+        /// 获取是否需要JOIN
+        /// </summary>
+        public bool IsJoin { get { return !string.IsNullOrWhiteSpace(JoinTableName); } }
+
+        /// <summary>
+        /// 获取或设置源字段，或用于写在JOIN语句部分的右侧
+        /// </summary>
+        public string SourceField { get { return _sourceField; } }
+        /// <summary>
+        /// 获取用于连接的字段.写在JOIN语句部分的左侧。
+        /// </summary>
+        public string ForeignKeyField { get { return _joinField; } }
+
+        /// <summary>
+        /// 获取用于Select语句的字段列表部分
+        /// </summary>
+        public string DisplayField { get { return _displayField; } }
+
+        public string AsField
+        {
+            get
+            {
+                if (IsJoin)
+                {
+                    return SourceField + "_" + DisplayField;
+                }
+                else
+                {
+                    return SourceField;
+                }
             }
         }
-        public PropertyTable(System.Reflection.PropertyInfo property, string tableName) {
-            if (property != null && !string.IsNullOrWhiteSpace(tableName)) {
-                this.PropertyName = property.Name;
-                this.TableName = tableName;
+
+        public string SelectAsField
+        {
+            get
+            {
+                if (IsJoin)
+                {
+                    return JoinTableAlias + "." + DisplayField + " as " + AsField;
+                }
+                else
+                {
+                    return "a." + SourceField + " as " + AsField;
+                }
             }
+        }
+
+        /// <summary>
+        /// 左连接字符串，Ex：LEFT JOIN x.FieldName=a.FieldName
+        /// </summary>
+        public string LeftJoin
+        {
+            get
+            {
+                if (IsJoin)
+                {
+                    return "LEFT JOIN " + JoinTableName + " " + JoinTableAlias + " ON " + JoinTableAlias + "." + ForeignKeyField + "=a." + SourceField;
+                }
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 内连接字符串，Ex：INNER JOIN x.FieldName=a.FieldName
+        /// </summary>
+        public string InnerJoin
+        {
+            get
+            {
+                if (IsJoin)
+                {
+                    return "INNER JOIN " + JoinTableName + " " + JoinTableAlias + " ON " + JoinTableAlias + "." + ForeignKeyField + "=a." + SourceField;
+                }
+                return string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// 右连接字符串，Ex：RIGHT JOIN x.FieldName=a.FieldName
+        /// </summary>
+        public string RightJoin
+        {
+            get
+            {
+                if (IsJoin)
+                {
+                    return "RIGHT JOIN " + JoinTableName + " " + JoinTableAlias + " ON " + JoinTableAlias + "." + ForeignKeyField + "=a." + SourceField;
+                }
+                return string.Empty;
+            }
+        }
+
+        public ModelField(string sourceField)
+        {
+            this._sourceField = sourceField;
+        }
+
+        public ModelField(string sourceField, string joinTableName, string joinTableAlias, string joinField, string displayField)
+        {
+            this._sourceField = sourceField;
+            this._joinTableName = joinTableName;
+            this.JoinTableAlias = joinTableAlias;
+            this._joinField = joinField;
+            this._displayField = displayField;
         }
     }
+
     /// <summary>
     /// 属性名与表名关系实例集合
     /// </summary>
-    public class PropertyTableCollection
+    public class ModelTable
     {
         string aliases = "bcdefghijklmnopqrstuvwxyz";
-        internal List<PropertyTable> List = new List<PropertyTable>();
+        internal List<ModelField> Fields = new List<ModelField>();
+        internal int tables = 0;
+        /// <summary>
+        /// 模型对应的表名称
+        /// </summary>
+        public string MainTable { get; set; }
 
-        public void Add(PropertyTable tt)
+        public void Add(string sourceField)
         {
-            if (tt != null)
+            if (!string.IsNullOrWhiteSpace(sourceField))
             {
-                List.Add(tt);
+                ModelField mf = new ModelField(sourceField);
+                mf._mainTable = this;
+                this.Fields.Add(mf);
+            }
+        }
+
+        public void Add(string mainTableField, string joinTable, string foreignKeyField, string displayField)
+        {
+            if (!string.IsNullOrWhiteSpace(mainTableField) &&
+                !string.IsNullOrWhiteSpace(joinTable) &&
+                !string.IsNullOrWhiteSpace(foreignKeyField) &&
+                !string.IsNullOrWhiteSpace(displayField)
+                )
+            {
+                string alias = aliases.Substring(tables, 1);
+                tables++;
+                ModelField mf = new ModelField(mainTableField, joinTable, alias, foreignKeyField, displayField);
+                mf._mainTable = this;
+                this.Fields.Add(mf);
             }
         }
 
@@ -43,71 +179,115 @@ namespace LearnLibs
         /// </summary>
         /// <param name="index"></param>
         /// <returns></returns>
-        public PropertyTable this[int index]
+        public ModelField this[int index]
         {
             get
             {
-                if (index < List.Count && index >= 0)
+                if (index < Fields.Count && index >= 0)
                 {
-                    return List[index];
+                    return Fields[index];
                 }
                 return null;
             }
         }
 
         /// <summary>
-        /// 根据属性名获取表别名
+        /// 根据asField获取ModelField
         /// </summary>
-        /// <param name="propertyName"></param>
+        /// <param name="asField"></param>
         /// <returns></returns>
-        public string TableAlias(string propertyName) {
-            if (!string.IsNullOrWhiteSpace(propertyName)) {
-                for (int i = 0; i < List.Count; i++) {
-                    if (List[i].PropertyName == propertyName) {
-                        return aliases.Substring(i);
+        public ModelField this[string asField]
+        {
+            get
+            {
+                foreach (ModelField mf in Fields)
+                {
+                    if (mf.AsField == asField)
+                    {
+                        return mf;
                     }
                 }
+                return null;
             }
-            return string.Empty;
+        }
+
+        public string SelectFields
+        {
+            get
+            {
+                string str = string.Empty;
+                foreach (ModelField f in Fields)
+                {
+                    str = F.JoinString(str, f.SelectAsField, ",");
+                }
+                return str;
+            }
         }
 
         /// <summary>
-        /// 根据属性获取表别名
+        /// 获取形如 Select a.Id as Id,a.Name as Name,b.Title as PressId_Title From table1 a Left Join table2 b on b.Id=a.PressId这样的SQL语句
         /// </summary>
-        /// <param name="property"></param>
-        /// <returns></returns>
-        public string TableAlias(System.Reflection.PropertyInfo property) {
-            if (property != null) {
-                for (int i = 0; i < List.Count; i++) {
-                    if (List[i].PropertyName == property.Name) {
-                        return aliases.Substring(i, 1);
+        public string LeftJoinSelectSql
+        {
+            get
+            {
+                string sql = "SELECT {0} FROM " + MainTable + " a {1}";
+                string fields = string.Empty;
+                string joins = string.Empty;
+                foreach (ModelField f in Fields)
+                {
+                    fields = F.JoinString(fields, f.SelectAsField, ",");
+                    if (f.IsJoin)
+                    {
+                        joins = F.JoinString(joins, f.LeftJoin, " ");
                     }
                 }
+                return string.Format(sql, fields, joins);
             }
-            return string.Empty;
         }
 
         /// <summary>
-        /// 根据属性名获取表名
+        /// 获取形如 Select a.Id as Id,a.Name as Name,b.Title as PressId_Title From table1 a Inner Join table2 b on b.Id=a.PressId这样的SQL语句
         /// </summary>
-        /// <param name="propertyName"></param>
-        /// <returns></returns>
-        public string TableName(string propertyName) {
-            if (!string.IsNullOrWhiteSpace(propertyName)) {
-                for (int i = 0; i < List.Count; i++) {
-                    if (List[i].PropertyName == propertyName) {
-                        return List[i].TableName;
+        public string InnerJoinSelectSql
+        {
+            get
+            {
+                string sql = "SELECT {0} FROM " + MainTable + " a {1}";
+                string fields = string.Empty;
+                string joins = string.Empty;
+                foreach (ModelField f in Fields)
+                {
+                    fields = F.JoinString(fields, f.SelectAsField, ",");
+                    if (f.IsJoin)
+                    {
+                        joins = F.JoinString(joins, f.InnerJoin, " ");
                     }
                 }
+                return string.Format(sql, fields, joins);
             }
-            return string.Empty;
         }
 
-        public string TableName(System.Reflection.PropertyInfo p) {
-            if (p != null) {
-                return TableName(p.Name);
+        /// <summary>
+        /// 获取形如 Select a.Id as Id,a.Name as Name,b.Title as PressId_Title From table1 a Right Join table2 b on b.Id=a.PressId这样的SQL语句
+        /// </summary>
+        public string RightJoinSelectSql
+        {
+            get
+            {
+                string sql = "SELECT {0} FROM " + MainTable + " a {1}";
+                string fields = string.Empty;
+                string joins = string.Empty;
+                foreach (ModelField f in Fields)
+                {
+                    fields = F.JoinString(fields, f.SelectAsField, ",");
+                    if (f.IsJoin)
+                    {
+                        joins = F.JoinString(joins, f.RightJoin, " ");
+                    }
+                }
+                return string.Format(sql, fields, joins);
             }
-            return string.Empty;
         }
     }
 }

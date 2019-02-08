@@ -31,87 +31,28 @@ namespace LearnLibs
         }
 
         /// <summary>
-        /// 获取类型的数据表名称。
-        /// <para>如果类型设置了DbTable特性，则返回DbTable特性的Name属性</para>
-        /// <para>如果类型没有DbTable特性，则返回类型名+"s"</para>
+        /// 返回两字符串用指定字符串连接后的新字符串。如果前字符串空，则返回后字符串。
         /// </summary>
-        /// <param name="type"></param>
+        /// <param name="frontStr"></param>
+        /// <param name="backStr"></param>
+        /// <param name="seq"></param>
         /// <returns></returns>
-        public static string GetTableName(Type type)
+        public static string JoinString(string frontStr, string backStr, string seq)
         {
-            if (type == null) throw new ArgumentNullException("type");
-            if (type.BaseType != typeof(BaseModel)) throw new NotInheritBaseModelException(type);
-            object[] attrs = type.GetCustomAttributes(true);
-            if (attrs != null && attrs.Length > 0)
+            if (!string.IsNullOrWhiteSpace(backStr) && seq != null && seq != string.Empty && seq != "")
             {
-                for (int i = 0; i < attrs.Length; i++)
+                if (string.IsNullOrWhiteSpace(frontStr))
                 {
-                    object attr = attrs[i];
-                    if (attr.GetType() == typeof(DbTableAttribute))
-                    {
-                        return ((DbTableAttribute)attr).TableName;
-                    }
+                    return backStr;
+                }
+                else
+                {
+                    return frontStr + seq + backStr;
                 }
             }
-            return type.Name + "s";
+            return frontStr;
         }
-        public static string GetTypeName(string tableName)
-        {
-            Assembly ass = Assembly.GetExecutingAssembly();
-            Type[] types = ass.GetTypes();
-            foreach (Type t in types)
-            {
-                if (BaseModel.IsSubclass(t) && GetTableName(t) == tableName)
-                {
-                    return t.Name;
-                }
-            }
-            return string.Empty;
-        }
-        public static DbColumnAttribute GetDbColumn(PropertyInfo p)
-        {
-            if (p == null) return null;
-            object[] attrs = p.GetCustomAttributes(true);
-            for (int i = 0; i < attrs.Length; i++)
-            {
-                if (attrs[i].GetType() == typeof(DbColumnAttribute))
-                {
-                    return attrs[i] as DbColumnAttribute;
-                }
-            }
-            return null;
-        }
-        public static PropertyInfo GetProperty(Type type, string fieldName)
-        {
-            PropertyInfo rp = null;
-            if (type != null && BaseModel.IsSubclass(type) && !string.IsNullOrWhiteSpace(fieldName))
-            {
-                PropertyInfo[] ps = type.GetProperties();
-                foreach (PropertyInfo p in ps)
-                {
-                    if (rp == null)
-                    {
-                        object[] attrs = p.GetCustomAttributes(true);
-                        foreach (object a in attrs)
-                        {
-                            if (a.GetType() == typeof(DbColumnAttribute))
-                            {
-                                DbColumnAttribute d = a as DbColumnAttribute;
-                                if (d.FieldName == fieldName)
-                                {
-                                    rp = p;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        break;
-                    }
-                }
-            }
-            return rp;
-        }
+
 
         public static string GetDbTypeStringForSqlite(DbType type)
         {
@@ -194,39 +135,6 @@ namespace LearnLibs
                 return "UnKnow";
             }
         }
-        public static void RemoveEvent<T>(T c, string name)
-        {
-            Delegate[] invokeList = GetObjectEventList(c, name);
-            if (invokeList != null)
-            {
-                foreach (Delegate del in invokeList)
-                {
-                    Console.WriteLine(del.ToString());
-                    typeof(T).GetEvent(name).RemoveEventHandler(c, del);
-                }
-            }
-        }
-
-        ///  <summary>     
-        /// 获取对象事件 zgke@sina.com qq:116149     
-        ///  </summary>     
-        ///  <param name="p_Object">对象 </param>     
-        ///  <param name="p_EventName">事件名 </param>     
-        ///  <returns>委托列 </returns>     
-        public static Delegate[] GetObjectEventList(object p_Object, string p_EventName)
-        {
-            EventInfo[] events = p_Object.GetType().GetEvents(BindingFlags.Public | BindingFlags.NonPublic);
-            if (events != null && events.Length > 0)
-            {
-                foreach (EventInfo e in events)
-                {
-                    Console.WriteLine(e.Name);
-                    Console.WriteLine(e.GetRaiseMethod().Name);
-                    Console.WriteLine(e.GetAddMethod().Name);
-                }
-            }
-            return null;
-        }
 
         /// <summary>
         /// 是否是指定长度的整型数字字符串
@@ -258,6 +166,7 @@ namespace LearnLibs
                 return defaultValue;
             }
         }
+
         public static void SetValue(ref DataRow r, string fn, object value)
         {
             if (r == null || string.IsNullOrWhiteSpace(fn) || value == null || r.Table == null || !r.Table.Columns.Contains(fn)) return;

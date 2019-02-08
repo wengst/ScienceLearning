@@ -30,7 +30,7 @@ namespace LearnLibs
         DisplayScenes _currentScenes = DisplayScenes.未设置;
         List<ModelDbItem> dcols = null;
         List<string> JoinTables = new List<string>();
-        PropertyTableCollection _ptc = new PropertyTableCollection();
+        ModelTable _mt = new ModelTable();
         #endregion
 
         #region private motheds
@@ -201,7 +201,8 @@ namespace LearnLibs
                     DataGridViewTextBoxColumn c = new DataGridViewTextBoxColumn();
                     c.HeaderText = b.DisplayColumn.HeaderText;
                     c.FillWeight = b.DisplayColumn.FillWeight;
-                    if (!string.IsNullOrWhiteSpace(b.DisplayColumn.Format)) {
+                    if (!string.IsNullOrWhiteSpace(b.DisplayColumn.Format))
+                    {
                         c.DefaultCellStyle.Format = b.DisplayColumn.Format;
                     }
                     c.ReadOnly = true;
@@ -225,7 +226,12 @@ namespace LearnLibs
         {
             if (e.FormattingApplied) return;
             if (e.Value == null) { e.Value = "NULL"; e.FormattingApplied = true; return; }
-            if (e.Value.GetType() == typeof(System.DBNull)) { e.Value = "DBNULL"; e.FormattingApplied = true; return; }
+            if (e.Value.GetType() == typeof(System.DBNull))
+            {
+                e.Value = ModelDbSet.GetCellValue(this.pri_field_type, e.ColumnIndex, e.RowIndex);
+                e.FormattingApplied = true;
+                return;
+            }
             if (dcols == null) { getDisplayColumns(); }
             //Console.WriteLine("cellFormatting " + dcols[e.ColumnIndex].DisplayColumn.HeaderText + " ValueType=" + e.Value.GetType().ToString() + " Value=" + e.Value.ToString());
             if (e.ColumnIndex < dcols.Count && !e.FormattingApplied && e.Value != null && e.Value.GetType() != typeof(DBNull) && !string.IsNullOrWhiteSpace(e.Value.ToString()))
@@ -281,7 +287,8 @@ namespace LearnLibs
                         e.Value = ((AnswerMode)e.Value).ToString("G");
                     }
                 }
-                else {
+                else
+                {
                     e.Value = string.Format(dspColAttr.Format, e.Value);
                     //Console.WriteLine("Formatted");
                 }
@@ -292,9 +299,10 @@ namespace LearnLibs
         #endregion
 
         #region public properties
-        public PropertyTableCollection PTC
+        public WhereArgs Args { get; set; }
+        public ModelTable ModelTableInfo
         {
-            get { return _ptc; }
+            get { return _mt; }
         }
         public DisplayScenes CurrentScenes
         {

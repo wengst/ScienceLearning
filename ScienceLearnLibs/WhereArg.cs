@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Data;
+using System.Collections.Generic;
 
 namespace LearnLibs
 {
@@ -36,7 +37,7 @@ namespace LearnLibs
                     Type t = Value.GetType();
                     if (t == typeof(Guid))
                     {
-                        return "UPPER(HEX(a." + Field + "))='" + F.byteToHexStr(((Guid)Value).ToByteArray()) + "'";
+                        return "UPPER(HEX(a." + Field + "))='" +F.byteToHexStr(((Guid)Value).ToByteArray()) + "'";
                     }
                     else if (t == typeof(string))
                     {
@@ -155,6 +156,19 @@ namespace LearnLibs
             }
         }
 
+        public List<WhereArg> Items
+        {
+            get
+            {
+                List<WhereArg> _items = new List<WhereArg>();
+                for (int i = 0; i < List.Count; i++)
+                {
+                    _items.Add((WhereArg)List[i]);
+                }
+                return _items;
+            }
+        }
+
         public string Where
         {
             get
@@ -182,14 +196,7 @@ namespace LearnLibs
                 string r = string.Empty;
                 foreach (WhereArg w in List)
                 {
-                    if (string.IsNullOrWhiteSpace(r))
-                    {
-                        r = w.RowFilter;
-                    }
-                    else
-                    {
-                        r += " AND " + w.RowFilter;
-                    }
+                    r = F.JoinString(r, w.RowFilter, " AND ");
                 }
                 return r;
             }
