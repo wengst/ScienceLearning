@@ -19,7 +19,7 @@ namespace LearnLibs
         internal string pri_field_tableName = null;
         Type pri_field_type = null;
         internal PropertyInfo[] internal_field_Properties = null;
-        List<ModelDbItem> pri_field_items = new List<ModelDbItem>();
+        List<ModelDbItem> items = new List<ModelDbItem>();
         List<ModelDbItem> _displayCols = null;
         List<ModelDbItem> _foreignKeyCols = null;
         ModelPrimaryKey _primaryKey = null;
@@ -44,6 +44,7 @@ namespace LearnLibs
                     object[] attrs = p.GetCustomAttributes(true);
                     ModelDbItem dbItem = new ModelDbItem();
                     dbItem.Property = p;
+                    dbItem.ProDataType = p.PropertyType;
                     foreach (object a in attrs)
                     {
                         Type at = a.GetType();
@@ -90,10 +91,13 @@ namespace LearnLibs
                         {
                             dbItem._autoIdentity = a as AutoIdentityAttribute;
                         }
+                        else if (at == typeof(ModelFieldXml)) {
+                            dbItem.AttrName = ((ModelFieldXml)a).AttrName;
+                        }
                     }
                     if (dbItem.Column != null)
                     {
-                        pri_field_items.Add(dbItem);
+                        items.Add(dbItem);
                         if (dbItem.IsPrimaryKey)
                         {
                             if (_primaryKey == null) { _primaryKey = new ModelPrimaryKey(dbItem); }
@@ -126,13 +130,13 @@ namespace LearnLibs
                     }
                 }
             }
-            if (pri_field_items.Count == 0)
+            if (items.Count == 0)
             {
                 throw new NotDbColumnAsModelException(pri_field_type);
             }
             else
             {
-                pri_field_items.Sort();
+                items.Sort();
             }
         }
 
@@ -155,6 +159,10 @@ namespace LearnLibs
                     else if (type == typeof(ModelEditorAttribute))
                     {
                         this.ModelEditor = obj as ModelEditorAttribute;
+                    }
+                    else if (type == typeof(ModelTableXml))
+                    {
+                        this.XmlItemName = ((ModelTableXml)obj).ItemName;
                     }
                 }
             }
@@ -299,6 +307,24 @@ namespace LearnLibs
         #endregion
 
         #region public properties
+        /// <summary>
+        /// 获取Xml节点属性名和属性数据列特性字典
+        /// </summary>
+        public Dictionary<string,ModelDbItem> XmlAttrs {
+            get {
+                Dictionary<string, ModelDbItem> xans = new Dictionary<string, ModelDbItem>();
+                for (int i = 0; i < items.Count; i++) {
+                    if (!string.IsNullOrWhiteSpace(items[i].AttrName)) {
+                        xans.Add(items[i].AttrName,items[i]);
+                    }
+                }
+                return xans;
+            }
+        }
+        /// <summary>
+        /// 获取XML节点名
+        /// </summary>
+        public string XmlItemName { get; private set; }
         public WhereArgs Args { get; set; }
         public ModelTable ModelTableInfo
         {
@@ -327,20 +353,11 @@ namespace LearnLibs
         /// 类型对应的表名称
         /// </summary>
         public string TableName { get { return pri_field_tableName; } }
-        /// <summary>
-        /// SQLite数据连接
-        /// </summary>
-        public SQLiteConnection Connection { get; private set; }
-
-        /// <summary>
-        /// 全局内存数据集
-        /// </summary>
-        public DataSet GlobalDataSet { get; private set; }
 
         /// <summary>
         /// 获取模型中包含DbColumn特性的所有列
         /// </summary>
-        public List<ModelDbItem> Columns { get { return pri_field_items; } }
+        public List<ModelDbItem> Columns { get { return items; } }
 
         /// <summary>
         /// 获取具有显示特性的数据列集合
@@ -383,7 +400,7 @@ namespace LearnLibs
         /// <summary>
         /// 获取具有主键特性的数据列
         /// </summary>
-        public ModelPrimaryKey PrimaryKeyColumn
+        public ModelPrimaryKey PrimaryKey
         {
             get
             {

@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Windows.Forms;
 using System.IO;
 using LearnLibs.Controls;
+using System.Xml;
 
 namespace LearnLibs
 {
@@ -18,6 +19,23 @@ namespace LearnLibs
         #endregion
 
         #region private motheds
+
+        static Dictionary<string, Type> XmlTables
+        {
+            get
+            {
+                Dictionary<string, Type> tables = new Dictionary<string, Type>();
+                foreach (KeyValuePair<Type, ModelDb> kv in ModelDbs)
+                {
+                    if (!string.IsNullOrWhiteSpace(kv.Value.XmlItemName))
+                    {
+                        tables.Add(kv.Value.XmlItemName, kv.Key);
+                    }
+                }
+                return tables;
+            }
+        }
+
         static T getAttribute<T>(Type type) where T : Attribute
         {
             if (type == null) return null;
@@ -196,6 +214,19 @@ namespace LearnLibs
                 using (SQLiteDataAdapter sda = new SQLiteDataAdapter(cmd))
                 {
                     sda.Fill(AppDataSet, md.TableName);
+                    DataTable dt = AppDataSet.Tables[md.TableName];
+                    if (dt.PrimaryKey == null || dt.PrimaryKey.Length == 0)
+                    {
+                        if (md.PrimaryKey != null)
+                        {
+                            DataColumn[] dcs = new DataColumn[md.PrimaryKey.Columns.Count];
+                            for (int i = 0; i < md.PrimaryKey.Columns.Count; i++)
+                            {
+                                dcs[i] = dt.Columns[md.PrimaryKey.Columns[i].FieldName];
+                            }
+                            dt.PrimaryKey = dcs;
+                        }
+                    }
                 }
             }
         }
@@ -322,10 +353,10 @@ namespace LearnLibs
             if (isBaseModel(type))
             {
                 ModelDb md = ModelDbs[type];
-                parameters = new SQLiteParameter[md.PrimaryKeyColumn.Columns.Count];
+                parameters = new SQLiteParameter[md.PrimaryKey.Columns.Count];
                 for (int i = 0; i < parameters.Length; i++)
                 {
-                    ModelDbItem dbItem = md.PrimaryKeyColumn.Columns[i];
+                    ModelDbItem dbItem = md.PrimaryKey.Columns[i];
                     parameters[i] = new SQLiteParameter();
                     parameters[i].ParameterName = dbItem.ParameterName;
                     parameters[i].DbType = dbItem.DataType;
@@ -398,7 +429,7 @@ namespace LearnLibs
             if (isBaseModel(type))
             {
                 ModelDb md = ModelDbs[type];
-                List<ModelDbItem> Columns = md.PrimaryKeyColumn.Columns;
+                List<ModelDbItem> Columns = md.PrimaryKey.Columns;
                 string tableName = md.TableName;
                 string where = "";
                 for (int i = 0; i < Columns.Count; i++)
@@ -424,7 +455,7 @@ namespace LearnLibs
                 ModelDb md = ModelDbs[type];
                 List<ModelDbItem> Columns = md.Columns;
                 string tableName = md.TableName;
-                int primaryKeyCount = md.PrimaryKeyColumn.Columns.Count;
+                int primaryKeyCount = md.PrimaryKey.Columns.Count;
                 createTableStr = "CREATE TABLE " + tableName + "(";
                 //构建表字段
                 foreach (ModelDbItem dbItem in Columns)
@@ -449,7 +480,7 @@ namespace LearnLibs
                 {
                     createTableStr += ",PRIMARY KEY(";
                     string primaryKeys = string.Empty;
-                    foreach (ModelDbItem dbItem in md.PrimaryKeyColumn.Columns)
+                    foreach (ModelDbItem dbItem in md.PrimaryKey.Columns)
                     {
                         primaryKeys = F.JoinString(primaryKeys, dbItem.FieldName, ",");
                     }
@@ -493,6 +524,212 @@ namespace LearnLibs
                 cmd.Parameters.AddRange(getPrimaryParameters(type));
             }
             return cmd;
+        }
+
+        static void setDataRowField(DataRow row, string field, string value, object defaultValue)
+        {
+            if (row == null || row.Table == null || string.IsNullOrWhiteSpace(field) || string.IsNullOrWhiteSpace(value)) return;
+            DataTable dt = row.Table;
+            if (dt.Columns.Contains(field))
+            {
+                Type t = dt.Columns[field].DataType;
+                Console.WriteLine("setDataRowField " + t.Name);
+                if (t == typeof(Guid))
+                {
+                    Guid guid;
+                    if (Guid.TryParse(value, out guid))
+                    {
+                        row[field] = guid;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(string))
+                {
+                    row[field] = value;
+                }
+                else if (t == typeof(int))
+                {
+                    int n0 = 0;
+                    if (int.TryParse(value, out n0))
+                    {
+                        row[field] = n0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(double))
+                {
+                    double f0 = 0.0f;
+                    if (double.TryParse(value, out f0))
+                    {
+                        row[field] = f0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(Decimal))
+                {
+                    Decimal d1;
+                    if (Decimal.TryParse(value, out d1))
+                    {
+                        row[field] = d1;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(DateTime))
+                {
+                    DateTime d0 = DateTime.Now;
+                    if (DateTime.TryParse(value, out d0))
+                    {
+                        row[field] = d0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(bool))
+                {
+                    bool b0 = false;
+                    if (bool.TryParse(value, out b0))
+                    {
+                        row[field] = b0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(Char))
+                {
+                    Char c0;
+                    if (Char.TryParse(value, out c0))
+                    {
+                        row[field] = c0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(Int16))
+                {
+                    Int16 n1;
+                    if (Int16.TryParse(value, out n1))
+                    {
+                        row[field] = n1;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(Int64))
+                {
+                    Int64 n2;
+                    if (Int64.TryParse(value, out n2))
+                    {
+                        row[field] = n2;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(UInt16))
+                {
+                    UInt16 un1;
+                    if (UInt16.TryParse(value, out un1))
+                    {
+                        row[field] = un1;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(UInt32))
+                {
+                    UInt32 un2;
+                    if (UInt32.TryParse(value, out un2))
+                    {
+                        row[field] = un2;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(UInt64))
+                {
+                    UInt64 un3;
+                    if (UInt64.TryParse(value, out un3))
+                    {
+                        row[field] = un3;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(Single))
+                {
+                    Single s0;
+                    if (Single.TryParse(value, out s0))
+                    {
+                        row[field] = s0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(TimeSpan))
+                {
+                    TimeSpan ts0;
+                    if (TimeSpan.TryParse(value, out ts0))
+                    {
+                        row[field] = ts0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(SByte))
+                {
+                    SByte sb0;
+                    if (SByte.TryParse(value, out sb0))
+                    {
+                        row[field] = sb0;
+                    }
+                    else
+                    {
+                        row[field] = defaultValue;
+                    }
+                }
+                else if (t == typeof(byte[]))
+                {
+                    row[field] = System.Text.Encoding.Default.GetBytes(value);
+                }
+            }
+        }
+
+        static void setDataRowField(DataRow row, string field, object objValue, object defaultValue)
+        {
+            if (row == null || row.Table == null || string.IsNullOrWhiteSpace(field) || objValue == null) return;
+            string value = objValue.ToString();
+            setDataRowField(row, field, value, defaultValue);
         }
         #endregion
 
@@ -643,6 +880,7 @@ namespace LearnLibs
                             throw new Exception("字段不存在");
                         }
                     }
+                    Console.WriteLine(args.RowFilter);
                     return dt.Select(args.RowFilter).Length > 0;
                 }
             }
@@ -977,25 +1215,18 @@ namespace LearnLibs
                 {
                     ModelDb md = ModelDbs[t];
                     string TableName = md.TableName;
-                    bool exis = false;
-                    Guid guid;
-                    Guid objId;
-                    foreach (DataRow row in AppDataSet.Tables[TableName].Rows)
-                    {
-                        guid = F.GetValue<Guid>(row, BaseModel.FN.Id, Guid.Empty);
-                        objId = ((BaseModel)obj).Id;
-                        //Console.WriteLine("DataRow Guid Value[" + guid.ToString() + "]=?Object Guid Value[" + objId.ToString() + "]");
-                        if (guid == objId)
-                        {
-                            r = row;
-                            exis = true;
-                            break;
-                        }
-                    }
                     if (isNew)
                     {
                         r = AppDataSet.Tables[TableName].NewRow();
-                        exis = false;
+                    }
+                    else
+                    {
+                        WhereArg arg = new WhereArg(BaseModel.FN.Id, obj.Id);
+                        WhereArgs args = new WhereArgs() { arg };
+                        if (RowIsExists<T>(args))
+                        {
+                            r = AppDataSet.Tables[md.TableName].Select(args.RowFilter)[0];
+                        }
                     }
                     DataTable dt = AppDataSet.Tables[TableName];
                     if (dt != null)
@@ -1006,30 +1237,26 @@ namespace LearnLibs
                             if (dt.Columns.Contains(typeCol.FieldName))
                             {
                                 object value = typeCol.Property.GetValue(obj, null);
-                                if (value != null)
+                                setDataRowField(r, typeCol.FieldName, value, typeCol.Column.DefaultValue);
+                                if (typeCol.IsForeignKey && typeCol.IsDisplayColumn)
                                 {
-                                    DataColumn dc = dt.Columns[typeCol.FieldName];
-                                    if (dc.DataType == typeof(int))
-                                    {
-                                        r[dc.ColumnName] = (int)value;
-                                    }
-                                    else if (dc.DataType == typeof(Guid))
-                                    {
-                                        r[dc.ColumnName] = (Guid)value;
-                                    }
-                                    else
-                                    {
-                                        r[dc.ColumnName] = value;
-                                    }
+                                    WhereArgs fargs = new WhereArgs();
+                                    WhereArg farg = new WhereArg(typeCol.ForeignKey.Field, value);
+                                    fargs.Add(farg);
+                                    object displayValue = AppDataSet.Tables[ModelDbs[typeCol.DisplayColumn.FromType].TableName].Select(fargs.RowFilter)[0][typeCol.DisplayColumn.Field];
+                                    setDataRowField(r, typeCol.FieldName + "_" + typeCol.DisplayColumn.Field, displayValue, "");
                                 }
                             }
                         }
+                        var i = 0;
+                        i++;
+                        if (i == 2) { }
                     }
-                    if (!exis)
+                    if (isNew)
                     {
                         AppDataSet.Tables[TableName].Rows.Add(r);
                     }
-                    md.Grid.Refresh();
+                    md.Grid.DataSource = GetDataView<T>(md.Args);
                 }
             }
             return r;
@@ -1262,8 +1489,10 @@ namespace LearnLibs
                 {
                     obj = (T)f.Object;
                     if (!CheckData<T>(obj)) return;
-
-                    obj.Id = Guid.NewGuid();
+                    if (isNew)
+                    {
+                        obj.Id = Guid.NewGuid();
+                    }
                     row = SaveDataRow<T>(obj, isNew);
                     md.Grid.DataSource = GetDataView<T>(md.Args);
                     md.Grid.Refresh();
@@ -1587,6 +1816,90 @@ namespace LearnLibs
         public static bool CheckData<T>(DataRow row) where T : BaseModel, new()
         {
             return true;
+        }
+        #endregion
+
+        #region XML
+
+
+        static object saveXmlNode(Type type, XmlNode node)
+        {
+            if (type != null && node != null)
+            {
+                object obj = Activator.CreateInstance(type);
+                ModelDb md = ModelDbs[type];
+                if (md != null)
+                {
+                    if (!AppDataSet.Tables.Contains(md.TableName))
+                    {
+                        fillRows(type, "1=1");
+                    }
+                    DataTable dt = AppDataSet.Tables[md.TableName];
+                    DataRow row = dt.NewRow();
+
+                    foreach (KeyValuePair<string, ModelDbItem> sps in md.XmlAttrs)
+                    {
+                        XmlAttributeCollection xms = node.Attributes;
+                        for (int i = xms.Count - 1; i >= 0; i--)
+                        {
+                            XmlAttribute xa = node.Attributes[i];
+                            if (xa.Name == sps.Key && !string.IsNullOrWhiteSpace(xa.Value))
+                            {
+                                string value = xa.Value;
+                                string field = sps.Value.FieldName;
+                                try
+                                {
+                                    setDataRowField(row, field, value, sps.Value.Column.DefaultValue);
+                                    break;
+                                }
+                                catch (Exception)
+                                {
+
+                                }
+                            }
+                        }
+                    }
+                    Guid guid = Guid.Empty;
+                    if (!row.IsNull(BaseModel.FN.Id))
+                    {
+                        if (!Guid.TryParse(row[BaseModel.FN.Id].ToString(), out guid)) { guid = Guid.Empty; }
+                    }
+                    if (dt.Select("Convert(" + BaseModel.FN.Id + ",'System.String'='" + guid.ToString() + "')").Length == 0)
+                    {
+                        dt.Rows.Add(row);
+                    }
+                    if (node.ChildNodes.Count > 0)
+                    {
+                        for (int j = 0; j < node.ChildNodes.Count; j++)
+                        {
+                            Type ct = XmlTables[node.ChildNodes[j].Name];
+                            if (isBaseModel(ct))
+                            {
+                                saveXmlNode(ct, node.ChildNodes[j]);
+                            }
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static void ImportFromXML(XmlDocument xmlDoc)
+        {
+            foreach (XmlNode node in xmlDoc.ChildNodes)
+            {
+                Type nt = XmlTables[node.Name];
+                if (isBaseModel(nt))
+                {
+                    saveXmlNode(nt, node);
+                    ModelDbs[nt].Grid.Refresh();
+                }
+            }
+        }
+
+        public static void ExportToXml(Type type)
+        {
+
         }
         #endregion
     }

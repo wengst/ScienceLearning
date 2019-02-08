@@ -29,6 +29,14 @@ namespace LearnLibs
 
         #region public properties
         /// <summary>
+        /// 属性数据类型
+        /// </summary>
+        public Type ProDataType { get; internal set; }
+        /// <summary>
+        /// 获取属性的XML节点属性名
+        /// </summary>
+        public string AttrName { get; internal set; }
+        /// <summary>
         /// 数据列关联的属性
         /// </summary>
         public PropertyInfo Property { get { return _property; } internal set { _property = value; } }

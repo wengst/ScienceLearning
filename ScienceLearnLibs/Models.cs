@@ -273,6 +273,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ParentId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Area), FN.Id)]
+        [ModelFieldXml(EL.AttrParentId)]
         public Guid ParentId { get; set; }
 
         /// <summary>
@@ -280,6 +281,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.Code, DbType.AnsiStringFixedLength, 6, Index = 2, IsAllowNull = false, DefaultValue = C.Zero6)]
         [DisplayColumn("代码", 1)]
+        [ModelFieldXml(EL.AttrCode)]
         public string Code { get; set; }
 
         /// <summary>
@@ -288,6 +290,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.Name, DbType.String, 4, Index = 3, IsAllowNull = false)]
         [DisplayColumn("地区名", 2)]
         [TreeNodeColumn(true)]
+        [ModelFieldXml(EL.AttrName)]
         public string Name { get; set; }
 
         /// <summary>
@@ -295,14 +298,29 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
         [DisplayColumn("有效", 4)]
+        [ModelFieldXml(EL.AttrIsValid)]
         public bool IsValid { get; set; }
 
-        [DbColumn(FN.xPath, DbType.AnsiString, 32, Index = 5, IsAllowNull = true)]
+        [DbColumn(FN.xPath, DbType.AnsiString, 32, Index = 5, IsAllowNull = true, DefaultValue = null)]
+        [ModelFieldXml(EL.AttrxPath)]
         public string xPath { get; set; }
 
+        [DbColumn(FN.Level, DbType.Int32, Index = 7, IsAllowNull = false, DefaultValue = 1)]
+        [ModelFieldXml(EL.AttrLevel)]
+        public int Level { get; set; }
+
+        /// <summary>
+        /// 是否是市辖区
+        /// </summary>
+        [DbColumn(FN.IsRuleCity, DbType.Boolean, Index = 8, IsAllowNull = false, DefaultValue = false)]
+        [DisplayColumn("市辖区",5)]
+        [ModelFieldXml(EL.AttrIsRuleCity)]
+        public bool IsRuleCity { get; set; }
+
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 6, IsAllowNull = true)]
-        [DisplayColumn("出版社", 5, typeof(Press), FN.FullName)]
+        [DisplayColumn("出版社", 6, typeof(Press), FN.FullName)]
         [ForeignKey(typeof(Press), FN.Id)]
+        [ModelFieldXml(EL.AttrPressId)]
         public Guid PressId
         {
             get;
@@ -317,7 +335,7 @@ namespace LearnLibs.Models
         public Area CreateChild()
         {
             Area a = new Area();
-            a.Id = Guid.Empty;
+            a.Level = this.Level + 1;
             a.ParentId = this.Id;
             a.IsValid = this.IsValid;
             a.InServer = false;
@@ -334,27 +352,33 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_Standards")]
     [ListItem(FN.Id, FN.Text)]
+    [ModelTableXml(EL.ItemStandard)]
     public class Standard : BaseModel
     {
         private Guid _parentId = Guid.Empty;
 
         [DbColumn(FN.ParentId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Standard), FN.Id)]
+        [ModelFieldXml(EL.AttrParentId)]
         public Guid ParentId { get { return _parentId; } set { _parentId = value; } }
 
         [DbColumn(FN.Code, DbType.AnsiString, 4, Index = 2, IsAllowNull = false)]
+        [ModelFieldXml(EL.AttrCode)]
         public string Code { get; set; }
 
         [DbColumn(FN.Text, DbType.String, 32, Index = 3, IsAllowNull = false)]
         [DisplayColumn("课标", 1)]
         [TreeNodeColumn(true)]
+        [ModelFieldXml(EL.AttrText)]
         public string Text { get; set; }
 
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
         [DisplayColumn("有效?", 2)]
+        [ModelFieldXml(EL.AttrIsValid)]
         public bool IsValid { get; set; }
 
         [DbColumn(FN.xPath, DbType.String, 64, Index = 5, IsAllowNull = true)]
+        [ModelFieldXml(EL.AttrxPath)]
         public string xPath { get; set; }
 
         public Standard CreateChild()
@@ -376,7 +400,7 @@ namespace LearnLibs.Models
     [DbTable("learn_Presses")]
     [ListItem(FN.Id, FN.FullName)]
     [ModelEditor(typeof(frmPress))]
-    [ModelTableXml(EL.Presses,EL.Press)]
+    [ModelTableXml(EL.ItemPress)]
     public class Press : BaseModel
     {
         /// <summary>
@@ -384,18 +408,18 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.Code, DbType.AnsiStringFixedLength, 2, Index = 1, IsAllowNull = false, DefaultValue = "01")]
         [DisplayColumn("代码", 0, FillWeight = 20)]
-        [ModelFieldXml(EL.Code)]
+        [ModelFieldXml(EL.AttrCode)]
         public string Code { get; set; }
 
         [DbColumn(FN.FullName, DbType.String, 16, Index = 2, IsAllowNull = false)]
         [DisplayColumn("全名", 1, FillWeight = 50)]
         [TreeNodeColumn(true)]
-        [ModelFieldXml(EL.FullName)]
+        [ModelFieldXml(EL.AttrFullName)]
         public string FullName { get; set; }
 
         [DbColumn(FN.ShortName, DbType.String, 4, Index = 3, IsAllowNull = false)]
         [DisplayColumn("简称", 2, FillWeight = 30)]
-        [ModelFieldXml(EL.ShortName)]
+        [ModelFieldXml(EL.AttrShortName)]
         public string ShortName { get; set; }
 
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
@@ -425,7 +449,7 @@ namespace LearnLibs.Models
     [DbTable("learn_TeachBooks")]
     [ListItem(FN.Id, FN.ShortName)]
     [ModelEditor(typeof(frmTeachBook))]
-    [ModelTableXml(EL.TeachBooks, EL.TeachBook)]
+    [ModelTableXml(EL.ItemTeachBook)]
     public class TeachBook : BaseModel
     {
         /// <summary>
@@ -434,7 +458,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Press), FN.Id)]
         [DisplayColumn("出版社", 7, typeof(Press), BaseModel.FN.ShortName, FillWeight = 30)]
-        [ModelFieldXml(EL.PressId)]
+        [ModelFieldXml(EL.AttrPressId)]
         public Guid PressId { get; set; }
 
         /// <summary>
@@ -443,7 +467,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.FullName, DbType.String, 16, Index = 2, IsAllowNull = false)]
         [DisplayColumn("全名", 1)]
         [TreeNodeColumn(true)]
-        [ModelFieldXml(EL.FullName)]
+        [ModelFieldXml(EL.AttrFullName)]
         public string FullName { get; set; }
 
         /// <summary>
@@ -451,7 +475,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ShortName, DbType.String, 6, Index = 3, IsAllowNull = false)]
         [DisplayColumn("简称", 2)]
-        [ModelFieldXml(EL.ShortName)]
+        [ModelFieldXml(EL.AttrShortName)]
         public string ShortName { get; set; }
 
         /// <summary>
@@ -459,7 +483,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.SchoolGrade, DbType.Int32, Index = 4, IsAllowNull = false, DefaultValue = (int)SchoolGrades.七年级)]
         [DisplayColumn("适应年级", 3, FromType = typeof(SchoolGrades))]
-        [ModelFieldXml(EL.SchoolGrade)]
+        [ModelFieldXml(EL.AttrSchoolGrade)]
         public SchoolGrades SchoolGrade { get; set; }
 
         /// <summary>
@@ -467,7 +491,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.Semester, DbType.Int32, Index = 5, IsAllowNull = false, DefaultValue = (int)Semesters.第一学期)]
         [DisplayColumn("适应学期", 4, FromType = typeof(Semesters))]
-        [ModelFieldXml(EL.Semester)]
+        [ModelFieldXml(EL.AttrSemester)]
         public Semesters Semester { get; set; }
 
         /// <summary>
@@ -475,7 +499,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ImplementDate, DbType.DateTime, Index = 6, IsAllowNull = false, DefaultValue = "2013-09-01 00:00:00")]
         [DisplayColumn("实施日期", 5, Format = "{0:yyyy-MM-dd}")]
-        [ModelFieldXml(EL.ImplementDate)]
+        [ModelFieldXml(EL.AttrImplementDate)]
         public DateTime ImplementDate { get; set; }
 
         public TeachBook()
@@ -510,7 +534,7 @@ namespace LearnLibs.Models
     [DbTable("learn_Categorys")]
     [ListItem(FN.Id, FN.Text)]
     [ModelEditor(typeof(frmCategory))]
-    [ModelTableXml(EL.Categorys,EL.Category)]
+    [ModelTableXml(EL.ItemCategory)]
     public class Category : BaseModel
     {
         private Guid _parentId = Guid.Empty;
@@ -519,7 +543,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.PressId, DbType.Guid, 16, Index = 1, IsAllowNull = false)]
         [ForeignKey(typeof(Press), FN.Id)]
-        [ModelFieldXml(EL.PressId)]
+        [ModelFieldXml(EL.AttrPressId)]
         public Guid PressId { get; set; }
 
         /// <summary>
@@ -527,7 +551,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.TeachBookId, DbType.Guid, 16, Index = 2, IsAllowNull = false)]
         [ForeignKey(typeof(TeachBook), FN.Id)]
-        [ModelFieldXml(EL.TeachBookId)]
+        [ModelFieldXml(EL.AttrTeachBookId)]
         public Guid TeachBookId { get; set; }
 
         /// <summary>
@@ -535,7 +559,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.ParentId, DbType.Guid, 16, Index = 3, IsAllowNull = false)]
         [ForeignKey(typeof(Category), FN.Id)]
-        [ModelFieldXml(EL.ParentId)]
+        [ModelFieldXml(EL.AttrParentId)]
         public Guid ParentId { get { return _parentId; } set { _parentId = value; } }
 
         /// <summary>
@@ -543,7 +567,7 @@ namespace LearnLibs.Models
         /// </summary>
         [DbColumn(FN.IndexNo, DbType.Int16, Index = 4, IsAllowNull = false, DefaultValue = 1)]
         [DisplayColumn("序号", 1)]
-        [ModelFieldXml(EL.Index)]
+        [ModelFieldXml(EL.AttrIndex)]
         [OrderBy(SortOrder.Ascending)]
         public int Index { get; set; }
 
@@ -553,7 +577,7 @@ namespace LearnLibs.Models
         [DbColumn(FN.Text, DbType.String, 16, Index = 5, IsAllowNull = false)]
         [DisplayColumn("单元", 2)]
         [TreeNodeColumn(true)]
-        [ModelFieldXml(EL.Text)]
+        [ModelFieldXml(EL.AttrText)]
         public string Text { get; set; }
 
         /// <summary>

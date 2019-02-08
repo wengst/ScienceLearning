@@ -25,6 +25,8 @@ namespace LearnLibs
             public const string Semester = "SemesterId";
             public const string Text = "Text";
             public const string IndexNo = "IndexNo";
+            public const string Level = "Level";
+            public const string IsRuleCity = "IsRuleCity";
             public const string TeachBookId = "TeachBookId";
             public const string xPath = "xPath";
             public const string AccountName = "AccountName";
@@ -66,29 +68,33 @@ namespace LearnLibs
             public const string Score = "Score";
         }
         public class EL {
-            public const string Presses = "presses";
-            public const string Press = "press";
-            public const string Area = "areas";
-            public const string Code = "code";
-            public const string Name = "name";
-            public const string ParentId = "parentId";
-            public const string Text = "text";
+            public const string AttrId = "id";
+            public const string AttrInServer = "insvr";
+            public const string AttrLastModify = "lmd";
+            public const string ItemPress = "pre";
+            public const string ItemArea = "a";
+            public const string AttrCode = "cd";
+            public const string AttrName = "nm";
+            public const string AttrParentId = "parId";
+            public const string AttrText = "txt";
             /// <summary>
             /// 是否市辖区
             /// </summary>
-            public const string isXQ = "IsXQ";
-            public const string TeachBook = "teachbook";
-            public const string TeachBooks = "teachbooks";
-            public const string TeachBookId = "teachbookid";
-            public const string Category = "category";
-            public const string Categorys = "categorys";
-            public const string FullName = "fullname";
-            public const string ShortName = "shortname";
-            public const string Index = "index";
-            public const string ImplementDate = "implement";
-            public const string PressId = "pressid";
-            public const string SchoolGrade = "grade";
-            public const string Semester = "semester";
+            public const string AttrIsRuleCity = "xq";
+            public const string ItemTeachBook = "tb";
+            public const string AttrTeachBookId = "tbid";
+            public const string ItemCategory = "cg";
+            public const string AttrFullName = "fn";
+            public const string AttrShortName = "sn";
+            public const string AttrIndex = "ind";
+            public const string AttrImplementDate = "imp";
+            public const string AttrPressId = "preId";
+            public const string AttrSchoolGrade = "g";
+            public const string AttrSemester = "st";
+            public const string ItemStandard = "sa";
+            public const string AttrIsValid = "iv";
+            public const string AttrxPath = "xp";
+            public const string AttrLevel = "lv";
         }
         #region private fields
         private Guid _id = Guid.Empty;
@@ -103,15 +109,18 @@ namespace LearnLibs
         [DbColumn(FN.Id, DbType.Guid, 16, IsAllowNull = false, Index = -3)]
         [PrimaryKey()]
         [TreeNodeColumn()]
+        [ModelFieldXml(EL.AttrId)]
         public Guid Id { get { return _id; } set { _id = value; } }
 
         /// <summary>
         /// 是否已经存入服务器
         /// </summary>
         [DbColumn(FN.InServer, DbType.Boolean, IsAllowNull = false, DefaultValue = false, Index = -2)]
+        [ModelFieldXml(EL.AttrInServer)]
         public bool InServer { get { return _inServer; } set { _inServer = value; } }
 
         [DbColumn(FN.LastModify, DbType.DateTime, IsAllowNull = false, Index = -1)]
+        [ModelFieldXml(EL.AttrLastModify)]
         public DateTime LastModify { get { return _lastModify; } set { _lastModify = value; } } 
         #endregion
 
