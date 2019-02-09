@@ -745,6 +745,58 @@ namespace LearnLibs
         #endregion
 
         #region public methods
+        static bool dataRowFieldNotNull(DataRow row, string field)
+        {
+            if (row != null && !string.IsNullOrWhiteSpace(field) && row.Table != null && row.Table.Columns.Contains(field) && !row.IsNull(field) && row[field].GetType() != typeof(DBNull))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        static void updateForeignColumn(Type type, DataRow row)
+        {
+            if (isBaseModel(type) && row != null)
+            {
+                ModelDb md = ModelDbs[type];
+                ModelTable mt = md.ModelTableInfo;
+                DataTable dt = AppDataSet.Tables[md.TableName];
+                if (dt != null && mt != null && mt.Fields.Count > 0)
+                {
+                    for (int colIndex = 0; colIndex < mt.Fields.Count; colIndex++)
+                    {
+                        ModelField mf = mt.Fields[colIndex];
+                        if (mf.IsJoin && dataRowFieldNotNull(row, mf.SourceField))
+                        {
+                            object sourceValue = row[mf.SourceField];
+                            if (!string.IsNullOrWhiteSpace(mf.JoinTableName) && AppDataSet.Tables.Contains(mf.JoinTableName))
+                            {
+                                WhereArgs args = new WhereArgs();
+                                WhereArg arg = new WhereArg(mf.ForeignKeyField, sourceValue);
+                                args.Add(arg);
+                                DataRow[] rows = AppDataSet.Tables[mf.JoinTableName].Select(args.RowFilter);
+                                if (rows != null && rows.Length > 0)
+                                {
+                                    string dfv = string.Empty;
+                                    foreach (DataRow r in rows)
+                                    {
+                                        if (dataRowFieldNotNull(r, mf.DisplayField))
+                                        {
+                                            dfv = F.JoinString(dfv, r[mf.DisplayField].ToString(), ",");
+                                        }
+                                    }
+                                    row[mf.AsField] = dfv;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         /// <summary>
         /// 根据
         /// </summary>
@@ -1238,19 +1290,9 @@ namespace LearnLibs
                             {
                                 object value = typeCol.Property.GetValue(obj, null);
                                 setDataRowField(r, typeCol.FieldName, value, typeCol.Column.DefaultValue);
-                                if (typeCol.IsForeignKey && typeCol.IsDisplayColumn)
-                                {
-                                    WhereArgs fargs = new WhereArgs();
-                                    WhereArg farg = new WhereArg(typeCol.ForeignKey.Field, value);
-                                    fargs.Add(farg);
-                                    object displayValue = AppDataSet.Tables[ModelDbs[typeCol.DisplayColumn.FromType].TableName].Select(fargs.RowFilter)[0][typeCol.DisplayColumn.Field];
-                                    setDataRowField(r, typeCol.FieldName + "_" + typeCol.DisplayColumn.Field, displayValue, "");
-                                }
                             }
                         }
-                        var i = 0;
-                        i++;
-                        if (i == 2) { }
+                        updateForeignColumn(t, r);
                     }
                     if (isNew)
                     {

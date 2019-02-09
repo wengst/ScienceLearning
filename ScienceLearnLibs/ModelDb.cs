@@ -236,9 +236,7 @@ namespace LearnLibs
             if (e.Value == null) { e.Value = "NULL"; e.FormattingApplied = true; return; }
             if (e.Value.GetType() == typeof(System.DBNull))
             {
-                e.Value = ModelDbSet.GetCellValue(this.pri_field_type, e.ColumnIndex, e.RowIndex);
-                e.FormattingApplied = true;
-                return;
+                e.FormattingApplied = true; return;
             }
             if (dcols == null) { getDisplayColumns(); }
             //Console.WriteLine("cellFormatting " + dcols[e.ColumnIndex].DisplayColumn.HeaderText + " ValueType=" + e.Value.GetType().ToString() + " Value=" + e.Value.ToString());

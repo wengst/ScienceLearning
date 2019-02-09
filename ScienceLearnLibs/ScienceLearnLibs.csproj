@@ -77,12 +77,18 @@
     <Compile Include="Controls\frmPress.Designer.cs">
       <DependentUpon>frmPress.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmStandard.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmStandard.Designer.cs">
+      <DependentUpon>frmStandard.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\frmTeachBook.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Controls\frmTeachBook.Designer.cs">
-		<DependentUpon>frmTeachBook.cs</DependentUpon>
-	</Compile>
+      <DependentUpon>frmTeachBook.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\LabelControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -144,9 +150,12 @@
     <EmbeddedResource Include="Controls\frmPress.resx">
       <DependentUpon>frmPress.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmStandard.resx">
+      <DependentUpon>frmStandard.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmTeachBook.resx">
-		<DependentUpon>frmTeachBook.cs</DependentUpon>
-	</EmbeddedResource>
+      <DependentUpon>frmTeachBook.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\LabelControl.resx">
       <DependentUpon>LabelControl.cs</DependentUpon>
     </EmbeddedResource>

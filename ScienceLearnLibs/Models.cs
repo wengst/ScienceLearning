@@ -39,27 +39,44 @@ namespace LearnLibs.Models
     /// </summary>
     [DbTable("learn_Schools")]
     [ListItem(FN.Id, FN.ShortName)]
-    [ModelEditor(typeof(Controls.FormDialog))]
+    [ModelEditor(typeof(Controls.frmSchool))]
     public class School : BaseModel
     {
         /// <summary>
-        /// 地区代码
+        /// 省ID
         /// </summary>
-        [DbColumn(FN.CityId, DbType.AnsiStringFixedLength, 6, IsAllowNull = false, Index = 1)]
+        [DbColumn(FN.ProvinceId, DbType.Guid, 16, IsAllowNull = false, DefaultValue = Guid.Empty,Index=1)]
+        [ForeignKey(typeof(Area), FN.Id)]
+        public Guid ProvinceId
+        {
+            get;
+            set;
+        }
+        /// <summary>
+        /// 城市ID
+        /// </summary>
+        [DbColumn(FN.CityId, DbType.AnsiStringFixedLength, 6, IsAllowNull = false, Index = 2)]
         [ForeignKey(typeof(Area), FN.Id)]
         public Guid CityId { get; set; }
 
         /// <summary>
+        /// 区县ID
+        /// </summary>
+        [DbColumn(FN.DistrictId, DbType.Guid, 16, IsAllowNull = false, DefaultValue = Guid.Empty,Index=3)]
+        [ForeignKey(typeof(Area), FN.Id)]
+        public Guid DistrictId { get; set; }
+
+        /// <summary>
         /// 学校类型
         /// </summary>
-        [DbColumn(FN.SchoolType, DbType.Int32, Index = 2, IsAllowNull = false, DefaultValue = (int)SchoolType.全日制学校)]
+        [DbColumn(FN.SchoolType, DbType.Int32, Index = 4, IsAllowNull = false, DefaultValue = (int)SchoolType.全日制学校)]
         [DisplayColumn("类别", 6, typeof(SchoolType))]
         public SchoolType SchoolType { get; set; }
 
         /// <summary>
         /// 全称
         /// </summary>
-        [DbColumn(FN.FullName, DbType.String, 16, Index = 3, IsAllowNull = false)]
+        [DbColumn(FN.FullName, DbType.String, 16, Index = 5, IsAllowNull = false)]
         [DisplayColumn("全称", 1, Scenes = DisplayScenes.运营端)]
         [TreeNodeColumn(true)]
         public string FullName { get; set; }
@@ -67,7 +84,7 @@ namespace LearnLibs.Models
         /// <summary>
         /// 简称
         /// </summary>
-        [DbColumn(FN.ShortName, DbType.String, 4, Index = 4, IsAllowNull = false)]
+        [DbColumn(FN.ShortName, DbType.String, 4, Index = 6, IsAllowNull = false)]
         [DisplayColumn("简称", 2, Scenes = DisplayScenes.运营端)]
         public string ShortName { get; set; }
     }
@@ -313,7 +330,7 @@ namespace LearnLibs.Models
         /// 是否是市辖区
         /// </summary>
         [DbColumn(FN.IsRuleCity, DbType.Boolean, Index = 8, IsAllowNull = false, DefaultValue = false)]
-        [DisplayColumn("市辖区",5)]
+        [DisplayColumn("市辖区", 5)]
         [ModelFieldXml(EL.AttrIsRuleCity)]
         public bool IsRuleCity { get; set; }
 
@@ -331,6 +348,7 @@ namespace LearnLibs.Models
         {
             this.Id = Guid.Empty;
             this.ParentId = Guid.Empty;
+            this.Level = 1;
         }
         public Area CreateChild()
         {
@@ -345,6 +363,18 @@ namespace LearnLibs.Models
             a.xPath = this.xPath + this.Code;
             return a;
         }
+
+        public School CreateSchool()
+        {
+            if (this.Level != 3)
+            {
+                School s = new School();
+                s.DistrictId = this.Id;
+                s.CityId = this.ParentId;
+                return s;
+            }
+            return null;
+        }
     }
 
     /// <summary>
@@ -353,6 +383,7 @@ namespace LearnLibs.Models
     [DbTable("learn_Standards")]
     [ListItem(FN.Id, FN.Text)]
     [ModelTableXml(EL.ItemStandard)]
+    [ModelEditor(typeof(frmStandard))]
     public class Standard : BaseModel
     {
         private Guid _parentId = Guid.Empty;
