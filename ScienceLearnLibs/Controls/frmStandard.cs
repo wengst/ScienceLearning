@@ -34,6 +34,9 @@ namespace LearnLibs.Controls
                         WhereArg arg = new WhereArg(BaseModel.FN.Id, standard.ParentId);
                         ltb_parent_name.TB.Text = ModelDbSet.GetFieldString<Standard>(BaseModel.FN.Text, new WhereArgs() { arg });
                     }
+                    else {
+                        ltb_parent_name.TB.Text = "无";
+                    }
                 }
             }
         }

@@ -190,4 +190,8 @@ namespace LearnLibs.Enums
         TreeNodeText = 2,
         TreeNodeName = 4
     }
+    public enum enumValid { 
+        有效,
+        已失效
+    }
 }

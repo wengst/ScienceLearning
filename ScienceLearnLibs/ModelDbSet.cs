@@ -1267,6 +1267,10 @@ namespace LearnLibs
                 {
                     ModelDb md = ModelDbs[t];
                     string TableName = md.TableName;
+                    if (!AppDataSet.Tables.Contains(TableName))
+                    {
+                        fillRows<T>(null, null);
+                    }
                     if (isNew)
                     {
                         r = AppDataSet.Tables[TableName].NewRow();

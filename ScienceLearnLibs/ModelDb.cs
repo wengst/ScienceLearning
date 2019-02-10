@@ -91,7 +91,8 @@ namespace LearnLibs
                         {
                             dbItem._autoIdentity = a as AutoIdentityAttribute;
                         }
-                        else if (at == typeof(ModelFieldXml)) {
+                        else if (at == typeof(ModelFieldXml))
+                        {
                             dbItem.AttrName = ((ModelFieldXml)a).AttrName;
                         }
                     }
@@ -292,6 +293,18 @@ namespace LearnLibs
                     {
                         e.Value = ((AnswerMode)e.Value).ToString("G");
                     }
+                    else if (displayType == typeof(enumValid))
+                    {
+                        enumValid ev = enumValid.有效;
+                        bool vb = (bool)e.Value;
+                        if (vb)
+                        {
+                            e.Value = enumValid.有效.ToString("G");
+                        }
+                        else {
+                            e.Value = enumValid.已失效.ToString("G");
+                        }
+                    }
                 }
                 else
                 {
@@ -308,12 +321,16 @@ namespace LearnLibs
         /// <summary>
         /// 获取Xml节点属性名和属性数据列特性字典
         /// </summary>
-        public Dictionary<string,ModelDbItem> XmlAttrs {
-            get {
+        public Dictionary<string, ModelDbItem> XmlAttrs
+        {
+            get
+            {
                 Dictionary<string, ModelDbItem> xans = new Dictionary<string, ModelDbItem>();
-                for (int i = 0; i < items.Count; i++) {
-                    if (!string.IsNullOrWhiteSpace(items[i].AttrName)) {
-                        xans.Add(items[i].AttrName,items[i]);
+                for (int i = 0; i < items.Count; i++)
+                {
+                    if (!string.IsNullOrWhiteSpace(items[i].AttrName))
+                    {
+                        xans.Add(items[i].AttrName, items[i]);
                     }
                 }
                 return xans;

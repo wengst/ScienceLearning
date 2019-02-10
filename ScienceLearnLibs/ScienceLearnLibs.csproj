@@ -71,11 +71,23 @@
     <Compile Include="Controls\frmCategory.Designer.cs">
       <DependentUpon>frmCategory.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmLogin.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmLogin.Designer.cs">
+      <DependentUpon>frmLogin.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\frmPress.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Controls\frmPress.Designer.cs">
       <DependentUpon>frmPress.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmRegister.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmRegister.Designer.cs">
+      <DependentUpon>frmRegister.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\frmSchool.cs">
       <SubType>Form</SubType>
@@ -153,8 +165,14 @@
     <EmbeddedResource Include="Controls\frmCategory.resx">
       <DependentUpon>frmCategory.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmLogin.resx">
+      <DependentUpon>frmLogin.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmPress.resx">
       <DependentUpon>frmPress.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmRegister.resx">
+      <DependentUpon>frmRegister.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmSchool.resx">
       <DependentUpon>frmSchool.cs</DependentUpon>

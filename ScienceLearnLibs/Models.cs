@@ -45,7 +45,7 @@ namespace LearnLibs.Models
         /// <summary>
         /// 省ID
         /// </summary>
-        [DbColumn(FN.ProvinceId, DbType.Guid, 16, IsAllowNull = false, DefaultValue = Guid.Empty,Index=1)]
+        [DbColumn(FN.ProvinceId, DbType.Guid, 16, IsAllowNull = false, DefaultValue = C.EmptyGuid, Index = 1)]
         [ForeignKey(typeof(Area), FN.Id)]
         public Guid ProvinceId
         {
@@ -62,7 +62,7 @@ namespace LearnLibs.Models
         /// <summary>
         /// 区县ID
         /// </summary>
-        [DbColumn(FN.DistrictId, DbType.Guid, 16, IsAllowNull = false, DefaultValue = Guid.Empty,Index=3)]
+        [DbColumn(FN.DistrictId, DbType.Guid, 16, IsAllowNull = false, DefaultValue = C.EmptyGuid, Index = 3)]
         [ForeignKey(typeof(Area), FN.Id)]
         public Guid DistrictId { get; set; }
 
@@ -404,13 +404,19 @@ namespace LearnLibs.Models
         public string Text { get; set; }
 
         [DbColumn(FN.IsValid, DbType.Boolean, Index = 4, IsAllowNull = false, DefaultValue = true)]
-        [DisplayColumn("有效?", 2)]
+        [DisplayColumn("有效?", 2, typeof(enumValid))]
         [ModelFieldXml(EL.AttrIsValid)]
         public bool IsValid { get; set; }
 
         [DbColumn(FN.xPath, DbType.String, 64, Index = 5, IsAllowNull = true)]
         [ModelFieldXml(EL.AttrxPath)]
         public string xPath { get; set; }
+
+        public Standard()
+        {
+            this.IsValid = true;
+            this.ParentId = Guid.Empty;
+        }
 
         public Standard CreateChild()
         {

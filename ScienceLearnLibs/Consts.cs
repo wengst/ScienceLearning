@@ -1,4 +1,4 @@
-﻿
+﻿using System;
 namespace LearnLibs
 {
     /// <summary>
@@ -12,5 +12,6 @@ namespace LearnLibs
         public const string OperationPrompt = "操作提示";
         public const string ErrorPrompt = "出错了！";
         public const string WarningPrompt = "警告";
+        public const string EmptyGuid = "{00000000-0000-0000-0000-000000000000}";
     }
 }
