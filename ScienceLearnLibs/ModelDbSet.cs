@@ -1170,6 +1170,18 @@ namespace LearnLibs
             return t;
         }
 
+        public static T GetObject<T>(Guid id) where T : BaseModel, new()
+        {
+            WhereArg arg = new WhereArg(BaseModel.FN.Id, id);
+            WhereArgs args = new WhereArgs() { arg };
+            DataView dv = GetDataView<T>(args);
+            if (dv != null && dv.Count > 0)
+            {
+                return ToObj<T>(dv[0].Row);
+            }
+            return null;
+        }
+
         /// <summary>
         /// 类型实参实例化方法
         /// </summary>
@@ -1862,6 +1874,337 @@ namespace LearnLibs
         public static bool CheckData<T>(DataRow row) where T : BaseModel, new()
         {
             return true;
+        }
+
+        public static ListItemAttribute GetListItem<T>() where T : BaseModel, new()
+        {
+            ModelDb md = ModelDbs[typeof(T)];
+            return md.ListMember;
+        }
+        #endregion
+
+        #region public controls mothods
+        public static T GetSelectedModel<T>(ComboBox cmb) where T : BaseModel, new()
+        {
+            T obj = null;
+            ModelDb md = ModelDbs[typeof(T)];
+            if (cmb.DataSource != null && cmb.SelectedIndex >= 0)
+            {
+                object dataObj = cmb.DataSource;
+                Type sourceType = dataObj.GetType();
+                if (sourceType == typeof(DataView))
+                {
+                    DataView dv = (DataView)dataObj;
+                    if (dv.Table.TableName == md.TableName)
+                    {
+                        obj = ToObj<T>(dv[cmb.SelectedIndex].Row);
+                    }
+                }
+                else if (sourceType == typeof(DataTable))
+                {
+                    DataTable dt = (DataTable)dataObj;
+                    if (dt.TableName == md.TableName)
+                    {
+                        obj = ToObj<T>(dt.Rows[cmb.SelectedIndex]);
+                    }
+                }
+                else if (sourceType == typeof(List<T>))
+                {
+                    obj = ((List<T>)dataObj)[cmb.SelectedIndex];
+                }
+            }
+            return obj;
+        }
+        public static T GetSelectedModel<T>(ListBox lb) where T : BaseModel, new() {
+            T obj = null;
+            ModelDb md = ModelDbs[typeof(T)];
+            if (lb.DataSource != null && lb.SelectedIndex >= 0)
+            {
+                object dataObj = lb.DataSource;
+                Type sourceType = dataObj.GetType();
+                if (sourceType == typeof(DataView))
+                {
+                    DataView dv = (DataView)dataObj;
+                    if (dv.Table.TableName == md.TableName)
+                    {
+                        obj = ToObj<T>(dv[lb.SelectedIndex].Row);
+                    }
+                }
+                else if (sourceType == typeof(DataTable))
+                {
+                    DataTable dt = (DataTable)dataObj;
+                    if (dt.TableName == md.TableName)
+                    {
+                        obj = ToObj<T>(dt.Rows[lb.SelectedIndex]);
+                    }
+                }
+                else if (sourceType == typeof(List<T>))
+                {
+                    obj = ((List<T>)dataObj)[lb.SelectedIndex];
+                }
+            }
+            return obj;
+        }
+        public static void SetSelectedModel<T>(ComboBox cmb, Guid objId) where T : BaseModel, new()
+        {
+            if (cmb == null || objId == Guid.Empty) return;
+            if (cmb.DataSource == null) return;
+            object dataObj = cmb.DataSource;
+            Type sType = dataObj.GetType();
+            ListItemAttribute listItem = GetListItem<T>();
+            int i = -1;
+            if (sType == typeof(DataView))
+            {
+                DataView dv = (DataView)dataObj;
+                foreach (DataRowView dvr in dv)
+                {
+                    i++;
+                    if ((Guid)dvr[listItem.ValueMember] == objId)
+                    {
+                        cmb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            else if (sType == typeof(DataTable))
+            {
+                DataTable dt = (DataTable)dataObj;
+                foreach (DataRow row in dt.Rows)
+                {
+                    i++;
+                    if ((Guid)row[listItem.ValueMember] == objId)
+                    {
+                        cmb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            else if (sType == typeof(List<T>))
+            {
+                List<T> listObj = (List<T>)dataObj;
+                foreach (T item in listObj)
+                {
+                    i++;
+                    if ((Guid)listItem.ValueProperty.GetValue(item, null) == objId)
+                    {
+                        cmb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+        public static void SetSelectedModel<T>(ListBox lb, Guid objId) where T : BaseModel, new() {
+            if (lb == null || objId == Guid.Empty) return;
+            if (lb.DataSource == null) return;
+            object dataObj = lb.DataSource;
+            Type sType = dataObj.GetType();
+            ListItemAttribute listItem = GetListItem<T>();
+            int i = -1;
+            if (sType == typeof(DataView))
+            {
+                DataView dv = (DataView)dataObj;
+                foreach (DataRowView dvr in dv)
+                {
+                    i++;
+                    if ((Guid)dvr[listItem.ValueMember] == objId)
+                    {
+                        lb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            else if (sType == typeof(DataTable))
+            {
+                DataTable dt = (DataTable)dataObj;
+                foreach (DataRow row in dt.Rows)
+                {
+                    i++;
+                    if ((Guid)row[listItem.ValueMember] == objId)
+                    {
+                        lb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            else if (sType == typeof(List<T>))
+            {
+                List<T> listObj = (List<T>)dataObj;
+                foreach (T item in listObj)
+                {
+                    i++;
+                    if ((Guid)listItem.ValueProperty.GetValue(item, null) == objId)
+                    {
+                        lb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+        public static void SetSelectedModel<T>(ComboBox cmb, T obj) where T : BaseModel, new()
+        {
+            Guid objId = Guid.Empty;
+            ListItemAttribute listItem = GetListItem<T>();
+            objId = (Guid)listItem.ValueProperty.GetValue(obj, null);
+            SetSelectedModel<T>(cmb, objId);
+        }
+        public static void SetSelectedModel<T>(ListBox lb, T obj) where T : BaseModel, new() {
+            Guid objId = Guid.Empty;
+            ListItemAttribute listItem = GetListItem<T>();
+            objId = (Guid)listItem.ValueProperty.GetValue(obj, null);
+            SetSelectedModel<T>(lb, objId);
+        }
+        public static int GetSelectedInt(ComboBox cmb, int defaultValue = 0)
+        {
+            int r = defaultValue;
+            if (cmb != null && cmb.Items.Count > 0 && cmb.SelectedItem != null)
+            {
+                int.TryParse(cmb.SelectedItem.ToString(), out r);
+            }
+            return r;
+        }
+        public static T GetSelectedEnum<T>(ComboBox cmb, T defaultValue = default(T)) where T : struct
+        {
+            if (typeof(T).IsEnum)
+            {
+                T r = defaultValue;
+                if (cmb != null && cmb.Items.Count > 0 && cmb.SelectedItem != null)
+                {
+                    Enum.TryParse<T>(cmb.SelectedItem.ToString(), out r);
+                }
+                return r;
+            }
+            else
+            {
+                throw new ArgumentException("泛型参数不是一个枚举类型");
+            }
+        }
+        public static void SetSelectedInt(ComboBox cmb, int value)
+        {
+            if (cmb != null && cmb.Items.Count > 0)
+            {
+                for (int i = 0; i < cmb.Items.Count; i++)
+                {
+                    if (cmb.Items[i].ToString() == value.ToString())
+                    {
+                        cmb.SelectedIndex = i;
+                        break;
+                    }
+                }
+            }
+        }
+        public static void BindComboBox<T>(ComboBox cmb, WhereArgs args) where T : BaseModel, new()
+        {
+            if (cmb != null)
+            {
+                cmb.Items.Clear();
+                ListItemAttribute listItem = GetListItem<T>();
+                if (listItem != null)
+                {
+                    if (string.IsNullOrWhiteSpace(cmb.ValueMember))
+                    {
+                        cmb.ValueMember = listItem.ValueMember;
+                    }
+                    if (string.IsNullOrWhiteSpace(cmb.DisplayMember))
+                    {
+                        cmb.DisplayMember = listItem.DisplayMember;
+                    }
+                    cmb.DataSource = GetDataView<T>(args);
+                    if (cmb.Items.Count > 0)
+                    {
+                        cmb.SelectedIndex = 0;
+                    }
+                }
+                else
+                {
+                    throw new Exception("类型" + typeof(T).Name + "没有设置ListItem特性");
+                }
+            }
+        }
+        public static void BindComboBoxSimple<T>(ComboBox cmb, WhereArg arg) where T : BaseModel, new()
+        {
+            if (arg != null)
+            {
+                BindComboBox<T>(cmb, new WhereArgs() { arg });
+            }
+            else
+            {
+                BindComboBox<T>(cmb, null);
+            }
+        }
+        public static void BindListBox<T>(ListBox lb, WhereArgs args) where T : BaseModel, new()
+        {
+            if (lb != null)
+            {
+                lb.Items.Clear();
+                ListItemAttribute listItem = GetListItem<T>();
+                if (listItem != null)
+                {
+                    if (string.IsNullOrWhiteSpace(lb.ValueMember))
+                    {
+                        lb.ValueMember = listItem.ValueMember;
+                    }
+                    if (string.IsNullOrWhiteSpace(lb.DisplayMember))
+                    {
+                        lb.DisplayMember = listItem.DisplayMember;
+                    }
+                    lb.DataSource = GetDataView<T>(args);
+                    if (lb.Items.Count > 0)
+                    {
+                        lb.SelectedIndex = 0;
+                    }
+                }
+                else
+                {
+                    throw new Exception("类型" + typeof(T).Name + "没有设置ListItem特性");
+                }
+            }
+        }
+        public static void BindListBoxSimple<T>(ListBox lb, WhereArg arg) where T : BaseModel, new()
+        {
+            if (arg != null)
+            {
+                BindListBox<T>(lb, new WhereArgs() { arg });
+            }
+            else
+            {
+                BindListBox<T>(lb, null);
+            }
+        }
+        public static void BindComboBoxByInts(ComboBox cmb, int min, int max)
+        {
+            if (cmb != null)
+            {
+                cmb.Items.Clear();
+                for (int i = min; i <= max; i++)
+                {
+                    cmb.Items.Add(i);
+                }
+                cmb.SelectedIndex = 0;
+            }
+        }
+        public static void BindComboBoxByEmuns<T>(ComboBox cmb) where T : struct
+        {
+            if (cmb != null && typeof(T).IsEnum)
+            {
+                string[] names = Enum.GetNames(typeof(T));
+                cmb.Items.Clear();
+                cmb.Items.AddRange(names);
+            }
+        }
+
+        public static Tmodel ShowDialog<Tfrom, Tmodel>(Form owner, Tmodel obj)
+            where Tfrom : FormDialog, new()
+            where Tmodel : BaseModel, new()
+        {
+            Tfrom f = new Tfrom();
+            f.Owner = owner;
+            f.Object = obj;
+            f.StartPosition = FormStartPosition.CenterParent;
+            if (f.ShowDialog() == DialogResult.OK)
+            {
+                obj = (Tmodel)f.Object;
+            }
+            return obj;
         }
         #endregion
 

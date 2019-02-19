@@ -1,6 +1,6 @@
 ﻿namespace LearnLibs.Controls
 {
-    partial class LTB
+    partial class LabTextButton
     {
         /// <summary>
         /// 必需的设计器变量。
@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.btnSelect = new System.Windows.Forms.Button();
             this.TB = new System.Windows.Forms.TextBox();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
@@ -41,30 +42,34 @@
             // splitContainer1.Panel2
             // 
             this.splitContainer1.Panel2.Controls.Add(this.TB);
-            this.splitContainer1.Size = new System.Drawing.Size(300, 24);
+            this.splitContainer1.Panel2.Controls.Add(this.btnSelect);
+            this.splitContainer1.Size = new System.Drawing.Size(392, 26);
             // 
-            // LB
+            // btnSelect
             // 
-            this.LB.Size = new System.Drawing.Size(98, 24);
+            this.btnSelect.Dock = System.Windows.Forms.DockStyle.Right;
+            this.btnSelect.Location = new System.Drawing.Point(246, 0);
+            this.btnSelect.Name = "btnSelect";
+            this.btnSelect.Size = new System.Drawing.Size(43, 26);
+            this.btnSelect.TabIndex = 0;
+            this.btnSelect.Text = "选择";
+            this.btnSelect.UseVisualStyleBackColor = true;
             // 
             // TB
             // 
-            this.TB.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.TB.Font = new System.Drawing.Font("宋体", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.TB.Dock = System.Windows.Forms.DockStyle.Top;
+            this.TB.Font = new System.Drawing.Font("宋体", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.TB.Location = new System.Drawing.Point(0, 0);
             this.TB.Name = "TB";
-            this.TB.Size = new System.Drawing.Size(197, 24);
-            this.TB.TabIndex = 0;
-            this.TB.TextChanged += new System.EventHandler(this.TB_TextChanged);
-            this.TB.Enter += new System.EventHandler(this.TB_Enter);
-            this.TB.Leave += new System.EventHandler(this.TB_Leave);
+            this.TB.ReadOnly = true;
+            this.TB.Size = new System.Drawing.Size(246, 26);
+            this.TB.TabIndex = 1;
             // 
-            // LTB
+            // LabTextButton
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
-            this.Name = "LTB";
-            this.Size = new System.Drawing.Size(300, 28);
-            this.Load += new System.EventHandler(this.LTB_Load);
+            this.Name = "LabTextButton";
+            this.Size = new System.Drawing.Size(392, 30);
             this.splitContainer1.Panel1.ResumeLayout(false);
             this.splitContainer1.Panel2.ResumeLayout(false);
             this.splitContainer1.Panel2.PerformLayout();
@@ -76,7 +81,7 @@
 
         #endregion
 
+        public System.Windows.Forms.Button btnSelect;
         public System.Windows.Forms.TextBox TB;
-
     }
 }

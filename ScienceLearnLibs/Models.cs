@@ -87,6 +87,15 @@ namespace LearnLibs.Models
         [DbColumn(FN.ShortName, DbType.String, 4, Index = 6, IsAllowNull = false)]
         [DisplayColumn("简称", 2, Scenes = DisplayScenes.运营端)]
         public string ShortName { get; set; }
+
+        public Schooling NewSchooling() {
+            Schooling sching = new Schooling();
+            sching.ProvinceId = this.ProvinceId;
+            sching.CityId = this.CityId;
+            sching.DistrictId = this.DistrictId;
+            sching.SchoolId = this.Id;
+            return sching;
+        }
     }
 
     /// <summary>

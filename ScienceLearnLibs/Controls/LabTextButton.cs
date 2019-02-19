@@ -8,10 +8,9 @@ using System.Windows.Forms;
 
 namespace LearnLibs.Controls
 {
-    public partial class LCB : LearnLibs.Controls.LabelControl
+    public partial class LabTextButton : LearnLibs.Controls.LabelControl
     {
-
-        public LCB()
+        public LabTextButton()
         {
             InitializeComponent();
         }

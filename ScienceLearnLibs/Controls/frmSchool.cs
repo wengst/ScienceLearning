@@ -12,14 +12,16 @@ namespace LearnLibs.Controls
             get
             {
                 if (school == null) school = new School();
-                if (lcb_schooltype.CMB.SelectedIndex != -1) {
+                if (lcb_schooltype.CMB.SelectedIndex != -1)
+                {
                     string stname = lcb_schooltype.CMB.Items[lcb_schooltype.CMB.SelectedIndex].ToString();
                     SchoolType st;
                     if (Enum.TryParse<SchoolType>(stname, out st))
                     {
                         school.SchoolType = st;
                     }
-                    else {
+                    else
+                    {
                         school.SchoolType = SchoolType.全日制学校;
                     }
                 }
@@ -29,10 +31,13 @@ namespace LearnLibs.Controls
             }
             set
             {
-                if (value != null) {
+                if (value != null)
+                {
                     school = (School)value;
-                    for (int i = 0; i < lcb_schooltype.CMB.Items.Count; i++) {
-                        if (lcb_schooltype.CMB.Items[i] == school.SchoolType.ToString("G")) {
+                    for (int i = 0; i < lcb_schooltype.CMB.Items.Count; i++)
+                    {
+                        if (lcb_schooltype.CMB.Items[i].ToString() == school.SchoolType.ToString("G"))
+                        {
                             lcb_schooltype.CMB.SelectedIndex = i;
                         }
                     }

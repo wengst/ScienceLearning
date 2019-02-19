@@ -71,6 +71,12 @@
     <Compile Include="Controls\frmCategory.Designer.cs">
       <DependentUpon>frmCategory.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmClassSelector.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmClassSelector.Designer.cs">
+      <DependentUpon>frmClassSelector.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\frmLogin.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -89,11 +95,29 @@
     <Compile Include="Controls\frmRegister.Designer.cs">
       <DependentUpon>frmRegister.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmSchooing.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmSchooing.Designer.cs">
+      <DependentUpon>frmSchooing.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\frmSchool.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Controls\frmSchool.Designer.cs">
       <DependentUpon>frmSchool.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmSchoolClass.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmSchoolClass.Designer.cs">
+      <DependentUpon>frmSchoolClass.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmSchoolSelector.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmSchoolSelector.Designer.cs">
+      <DependentUpon>frmSchoolSelector.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\frmStandard.cs">
       <SubType>Form</SubType>
@@ -107,11 +131,23 @@
     <Compile Include="Controls\frmTeachBook.Designer.cs">
       <DependentUpon>frmTeachBook.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmTeachings.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmTeachings.Designer.cs">
+      <DependentUpon>frmTeachings.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\LabelControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="Controls\LabelControl.Designer.cs">
       <DependentUpon>LabelControl.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\LabTextButton.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\LabTextButton.Designer.cs">
+      <DependentUpon>LabTextButton.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\LB.cs">
       <SubType>UserControl</SubType>
@@ -151,6 +187,11 @@
     <Compile Include="ModelDbSet.cs" />
     <Compile Include="Models.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="SelectExpression.cs" />
     <Compile Include="PropertyTable.cs" />
     <Compile Include="WhereArg.cs" />
@@ -165,6 +206,9 @@
     <EmbeddedResource Include="Controls\frmCategory.resx">
       <DependentUpon>frmCategory.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmClassSelector.resx">
+      <DependentUpon>frmClassSelector.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmLogin.resx">
       <DependentUpon>frmLogin.cs</DependentUpon>
     </EmbeddedResource>
@@ -174,8 +218,17 @@
     <EmbeddedResource Include="Controls\frmRegister.resx">
       <DependentUpon>frmRegister.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmSchooing.resx">
+      <DependentUpon>frmSchooing.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmSchool.resx">
       <DependentUpon>frmSchool.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmSchoolClass.resx">
+      <DependentUpon>frmSchoolClass.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmSchoolSelector.resx">
+      <DependentUpon>frmSchoolSelector.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmStandard.resx">
       <DependentUpon>frmStandard.cs</DependentUpon>
@@ -183,8 +236,14 @@
     <EmbeddedResource Include="Controls\frmTeachBook.resx">
       <DependentUpon>frmTeachBook.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmTeachings.resx">
+      <DependentUpon>frmTeachings.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\LabelControl.resx">
       <DependentUpon>LabelControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LabTextButton.resx">
+      <DependentUpon>LabTextButton.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\LB.resx">
       <DependentUpon>LB.cs</DependentUpon>
@@ -200,6 +259,10 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\SelectRoles.resx">
       <DependentUpon>SelectRoles.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
