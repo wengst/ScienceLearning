@@ -30,6 +30,7 @@
         {
             this.labSchools = new LearnLibs.Controls.LabTextButton();
             this.lcbClasses = new LearnLibs.Controls.LCB();
+            this.lcbPeriods = new LearnLibs.Controls.LCB();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
             this.splitContainer1.Panel1.SuspendLayout();
             this.splitContainer1.SuspendLayout();
@@ -41,9 +42,10 @@
             // splitContainer1.Panel1
             // 
             this.splitContainer1.Panel1.Controls.Add(this.lcbClasses);
+            this.splitContainer1.Panel1.Controls.Add(this.lcbPeriods);
             this.splitContainer1.Panel1.Controls.Add(this.labSchools);
-            this.splitContainer1.Size = new System.Drawing.Size(318, 86);
-            this.splitContainer1.SplitterDistance = 58;
+            this.splitContainer1.Size = new System.Drawing.Size(318, 110);
+            this.splitContainer1.SplitterDistance = 82;
             // 
             // labSchools
             // 
@@ -57,6 +59,7 @@
             this.labSchools.Padding = new System.Windows.Forms.Padding(0, 2, 0, 2);
             this.labSchools.Size = new System.Drawing.Size(318, 26);
             this.labSchools.TabIndex = 0;
+            this.labSchools.ButtonClick += new System.EventHandler(this.selectSchool);
             // 
             // lcbClasses
             // 
@@ -65,17 +68,32 @@
             this.lcbClasses.Font = new System.Drawing.Font("宋体", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
             this.lcbClasses.Label = "班级";
             this.lcbClasses.LabelWidth = 40;
-            this.lcbClasses.Location = new System.Drawing.Point(0, 26);
+            this.lcbClasses.Location = new System.Drawing.Point(0, 52);
             this.lcbClasses.MinimumSize = new System.Drawing.Size(200, 26);
             this.lcbClasses.Name = "lcbClasses";
             this.lcbClasses.Padding = new System.Windows.Forms.Padding(0, 2, 0, 2);
             this.lcbClasses.Size = new System.Drawing.Size(318, 26);
             this.lcbClasses.TabIndex = 1;
             // 
+            // lcbPeriods
+            // 
+            this.lcbPeriods.AutoSize = true;
+            this.lcbPeriods.Dock = System.Windows.Forms.DockStyle.Top;
+            this.lcbPeriods.Font = new System.Drawing.Font("宋体", 11F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(134)));
+            this.lcbPeriods.Label = "届次";
+            this.lcbPeriods.LabelWidth = 40;
+            this.lcbPeriods.Location = new System.Drawing.Point(0, 26);
+            this.lcbPeriods.MinimumSize = new System.Drawing.Size(200, 26);
+            this.lcbPeriods.Name = "lcbPeriods";
+            this.lcbPeriods.Padding = new System.Windows.Forms.Padding(0, 2, 0, 2);
+            this.lcbPeriods.Size = new System.Drawing.Size(318, 26);
+            this.lcbPeriods.TabIndex = 2;
+            this.lcbPeriods.SelectedIndexChanged += new System.EventHandler(this.selectPeriod);
+            // 
             // frmClassSelector
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
-            this.ClientSize = new System.Drawing.Size(318, 86);
+            this.ClientSize = new System.Drawing.Size(318, 110);
             this.Name = "frmClassSelector";
             this.Text = "班级选择器";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.frmClassSelector_FormClosing);
@@ -91,5 +109,6 @@
 
         private LabTextButton labSchools;
         private LCB lcbClasses;
+        private LCB lcbPeriods;
     }
 }

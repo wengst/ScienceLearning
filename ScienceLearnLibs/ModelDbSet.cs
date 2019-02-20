@@ -1915,7 +1915,9 @@ namespace LearnLibs
             }
             return obj;
         }
-        public static T GetSelectedModel<T>(ListBox lb) where T : BaseModel, new() {
+
+        public static T GetSelectedModel<T>(ListBox lb) where T : BaseModel, new()
+        {
             T obj = null;
             ModelDb md = ModelDbs[typeof(T)];
             if (lb.DataSource != null && lb.SelectedIndex >= 0)
@@ -1945,6 +1947,7 @@ namespace LearnLibs
             }
             return obj;
         }
+
         public static void SetSelectedModel<T>(ComboBox cmb, Guid objId) where T : BaseModel, new()
         {
             if (cmb == null || objId == Guid.Empty) return;
@@ -1993,7 +1996,9 @@ namespace LearnLibs
                 }
             }
         }
-        public static void SetSelectedModel<T>(ListBox lb, Guid objId) where T : BaseModel, new() {
+
+        public static void SetSelectedModel<T>(ListBox lb, Guid objId) where T : BaseModel, new()
+        {
             if (lb == null || objId == Guid.Empty) return;
             if (lb.DataSource == null) return;
             object dataObj = lb.DataSource;
@@ -2040,6 +2045,7 @@ namespace LearnLibs
                 }
             }
         }
+
         public static void SetSelectedModel<T>(ComboBox cmb, T obj) where T : BaseModel, new()
         {
             Guid objId = Guid.Empty;
@@ -2047,12 +2053,15 @@ namespace LearnLibs
             objId = (Guid)listItem.ValueProperty.GetValue(obj, null);
             SetSelectedModel<T>(cmb, objId);
         }
-        public static void SetSelectedModel<T>(ListBox lb, T obj) where T : BaseModel, new() {
+
+        public static void SetSelectedModel<T>(ListBox lb, T obj) where T : BaseModel, new()
+        {
             Guid objId = Guid.Empty;
             ListItemAttribute listItem = GetListItem<T>();
             objId = (Guid)listItem.ValueProperty.GetValue(obj, null);
             SetSelectedModel<T>(lb, objId);
         }
+
         public static int GetSelectedInt(ComboBox cmb, int defaultValue = 0)
         {
             int r = defaultValue;
@@ -2062,6 +2071,7 @@ namespace LearnLibs
             }
             return r;
         }
+
         public static T GetSelectedEnum<T>(ComboBox cmb, T defaultValue = default(T)) where T : struct
         {
             if (typeof(T).IsEnum)
@@ -2078,6 +2088,26 @@ namespace LearnLibs
                 throw new ArgumentException("泛型参数不是一个枚举类型");
             }
         }
+
+        public static void SetSelectedEnum<TEnum>(ComboBox cmb, TEnum value) where TEnum : struct
+        {
+            if (cmb != null && cmb.Items.Count > 0 && typeof(TEnum).IsEnum)
+            {
+                TEnum e = default(TEnum);
+                for (int i = 0; i < cmb.Items.Count; i++)
+                {
+                    if (Enum.TryParse<TEnum>(cmb.Items[i].ToString(), out e))
+                    {
+                        if (e.Equals(value))
+                        {
+                            cmb.SelectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         public static void SetSelectedInt(ComboBox cmb, int value)
         {
             if (cmb != null && cmb.Items.Count > 0)
@@ -2092,7 +2122,8 @@ namespace LearnLibs
                 }
             }
         }
-        public static void BindComboBox<T>(ComboBox cmb, WhereArgs args) where T : BaseModel, new()
+
+        public static void BindComboBox<T>(ComboBox cmb, WhereArgs args, T selectedObj = null) where T : BaseModel, new()
         {
             if (cmb != null)
             {
@@ -2111,7 +2142,19 @@ namespace LearnLibs
                     cmb.DataSource = GetDataView<T>(args);
                     if (cmb.Items.Count > 0)
                     {
-                        cmb.SelectedIndex = 0;
+                        if (selectedObj == null)
+                        {
+                            cmb.SelectedIndex = 0;
+                        }
+                        else
+                        {
+                            object selValue = listItem.ValueProperty.GetValue(selectedObj, null);
+                            cmb.SelectedValue = selValue;
+                            if (cmb.SelectedValue == null)
+                            {
+                                cmb.SelectedIndex = 0;
+                            }
+                        }
                     }
                 }
                 else
@@ -2120,18 +2163,27 @@ namespace LearnLibs
                 }
             }
         }
-        public static void BindComboBoxSimple<T>(ComboBox cmb, WhereArg arg) where T : BaseModel, new()
+
+        public static void BindComboBoxSimple<T>(ComboBox cmb, WhereArg arg, T selectedObj = null) where T : BaseModel, new()
         {
             if (arg != null)
             {
-                BindComboBox<T>(cmb, new WhereArgs() { arg });
+                BindComboBox<T>(cmb, new WhereArgs() { arg }, selectedObj);
             }
             else
             {
-                BindComboBox<T>(cmb, null);
+                BindComboBox<T>(cmb, null, selectedObj);
             }
         }
-        public static void BindListBox<T>(ListBox lb, WhereArgs args) where T : BaseModel, new()
+
+        /// <summary>
+        /// 向ListBox控件填充BaseModel派生实例
+        /// </summary>
+        /// <typeparam name="T">BaseModel的派生类型</typeparam>
+        /// <param name="lb">待填充的ListBox控件</param>
+        /// <param name="args">数据查询参数集合</param>
+        /// <param name="selectedObj">选中的对象</param>
+        public static void BindListBox<T>(ListBox lb, WhereArgs args, T selectedObj = null) where T : BaseModel, new()
         {
             if (lb != null)
             {
@@ -2150,7 +2202,19 @@ namespace LearnLibs
                     lb.DataSource = GetDataView<T>(args);
                     if (lb.Items.Count > 0)
                     {
-                        lb.SelectedIndex = 0;
+                        if (selectedObj == null)
+                        {
+                            lb.SelectedIndex = 0;
+                        }
+                        else
+                        {
+                            object selValue = listItem.ValueProperty.GetValue(selectedObj, null);
+                            lb.SelectedValue = selValue;
+                            if (lb.SelectedValue == null)
+                            {
+                                lb.SelectedIndex = 0;
+                            }
+                        }
                     }
                 }
                 else
@@ -2159,39 +2223,130 @@ namespace LearnLibs
                 }
             }
         }
-        public static void BindListBoxSimple<T>(ListBox lb, WhereArg arg) where T : BaseModel, new()
+
+        /// <summary>
+        /// 向ListBox控件填充BaseModel的派生实例
+        /// </summary>
+        /// <typeparam name="T">BaseModel的派生类型</typeparam>
+        /// <param name="lb">要填充的ListBox控件</param>
+        /// <param name="arg">单一查询参数</param>
+        public static void BindListBoxSimple<T>(ListBox lb, WhereArg arg, T selectedObj = null) where T : BaseModel, new()
         {
             if (arg != null)
             {
-                BindListBox<T>(lb, new WhereArgs() { arg });
+                BindListBox<T>(lb, new WhereArgs() { arg }, selectedObj);
             }
             else
             {
-                BindListBox<T>(lb, null);
+                BindListBox<T>(lb, null, selectedObj);
             }
         }
-        public static void BindComboBoxByInts(ComboBox cmb, int min, int max)
+
+        /// <summary>
+        /// 向ComboBox控件填充连续整数
+        /// </summary>
+        /// <param name="cmb">要填充的ComboBox控件</param>
+        /// <param name="min">最小值</param>
+        /// <param name="max">最大值</param>
+        /// <param name="selectedValue">选中值</param>
+        public static void BindComboBoxByInts(ComboBox cmb, int min, int max, int selectedValue = int.MinValue)
         {
             if (cmb != null)
             {
                 cmb.Items.Clear();
+                int n = -1;
+                int selectedIndex = -1;
                 for (int i = min; i <= max; i++)
                 {
+                    n++;
                     cmb.Items.Add(i);
+                    if (i == selectedValue)
+                    {
+                        selectedIndex = n;
+                    }
                 }
-                cmb.SelectedIndex = 0;
+                cmb.SelectedIndex = selectedIndex;
             }
         }
-        public static void BindComboBoxByEmuns<T>(ComboBox cmb) where T : struct
+
+        /// <summary>
+        /// 向ComboBox填充枚举
+        /// </summary>
+        /// <typeparam name="T">要填充的枚举类型</typeparam>
+        /// <param name="cmb">要填充的ComboBox控件</param>
+        /// <param name="selecteValue">选中的枚举</param>
+        public static void BindComboBoxByEmuns<T>(ComboBox cmb, T selecteValue = default(T)) where T : struct
         {
             if (cmb != null && typeof(T).IsEnum)
             {
                 string[] names = Enum.GetNames(typeof(T));
                 cmb.Items.Clear();
                 cmb.Items.AddRange(names);
+                if (cmb.Items.Count > 0)
+                {
+                    T e = default(T);
+                    for (int i = 0; i < cmb.Items.Count; i++)
+                    {
+                        if (Enum.TryParse<T>(cmb.Items[i].ToString(), out e))
+                        {
+                            if (e.Equals(selecteValue))
+                            {
+                                cmb.SelectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (cmb.SelectedIndex == -1)
+                    {
+                        cmb.SelectedIndex = 0;
+                    }
+                }
             }
         }
 
+        /// <summary>
+        /// 向ComboBox控件填充枚举
+        /// </summary>
+        /// <typeparam name="T">枚举类型</typeparam>
+        /// <param name="cmb">要填充的ComboBox控件</param>
+        /// <param name="selectedValue">选中值</param>
+        public static void BindComboBoxByEnums<T>(ComboBox cmb, int selectedValue = 0) where T : struct
+        {
+            if (cmb != null && typeof(T).IsEnum)
+            {
+                string[] names = Enum.GetNames(typeof(T));
+                cmb.Items.Clear();
+                cmb.Items.AddRange(names);
+                if (cmb.Items.Count > 0)
+                {
+                    T e = default(T);
+                    for (int i = 0; i < cmb.Items.Count; i++)
+                    {
+                        if (Enum.TryParse<T>(cmb.Items[i].ToString(), out e))
+                        {
+                            if (e.Equals(selectedValue))
+                            {
+                                cmb.SelectedIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                    if (cmb.SelectedIndex == -1)
+                    {
+                        cmb.SelectedIndex = 0;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 显示一个编辑对话框
+        /// </summary>
+        /// <typeparam name="Tfrom">对话框类型</typeparam>
+        /// <typeparam name="Tmodel">BaseModel派生类型</typeparam>
+        /// <param name="owner">对话框所有者</param>
+        /// <param name="obj">欲编辑的派生类实例</param>
+        /// <returns></returns>
         public static Tmodel ShowDialog<Tfrom, Tmodel>(Form owner, Tmodel obj)
             where Tfrom : FormDialog, new()
             where Tmodel : BaseModel, new()

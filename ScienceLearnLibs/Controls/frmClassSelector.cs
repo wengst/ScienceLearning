@@ -13,14 +13,45 @@ namespace LearnLibs.Controls
     {
         SchoolClass cls = null;
         School sch = null;
+        Guid fixSchId = Guid.Empty;
 
         void selectSchool(object sender, EventArgs e)
         {
             sch = ModelDbSet.ShowDialog<frmSchoolSelector, School>(this, sch);
             if (sch != null)
             {
-                WhereArg arg = new WhereArg(BaseModel.FN.SchoolId, sch.Id);
-                ModelDbSet.BindComboBoxSimple<SchoolClass>(lcbClasses.CMB, arg);
+                labSchools.Text = sch.FullName;
+                WhereArgs args = new WhereArgs();
+                args.Add(new WhereArg(BaseModel.FN.SchoolId, sch.Id));
+                int Period = ModelDbSet.GetSelectedInt(lcbPeriods.CMB);
+                args.Add(new WhereArg(BaseModel.FN.Period, Period));
+                ModelDbSet.BindComboBox<SchoolClass>(lcbClasses.CMB, args);
+            }
+        }
+
+        void selectPeriod(object sender, EventArgs e)
+        {
+            if (sch != null)
+            {
+                int Period = ModelDbSet.GetSelectedInt(lcbPeriods.CMB);
+                WhereArgs args = new WhereArgs();
+                args.Add(new WhereArg(BaseModel.FN.SchoolId, sch.Id));
+                args.Add(new WhereArg(BaseModel.FN.Period, Period));
+                ModelDbSet.BindComboBox<SchoolClass>(lcbClasses.CMB, args, cls);
+            }
+        }
+
+        void bindClasses(Guid schId)
+        {
+            sch = ModelDbSet.GetObject<School>(schId);
+            int Period = ModelDbSet.GetSelectedInt(lcbPeriods.CMB);
+            if (sch != null)
+            {
+                labSchools.Text = sch.FullName;
+                WhereArgs args = new WhereArgs();
+                args.Add(new WhereArg(BaseModel.FN.SchoolId, schId));
+                args.Add(new WhereArg(BaseModel.FN.Period, Period));
+                ModelDbSet.BindComboBox<SchoolClass>(lcbClasses.CMB, args);
             }
         }
 
@@ -28,18 +59,49 @@ namespace LearnLibs.Controls
         {
             get
             {
-                return ModelDbSet.GetSelectedModel<SchoolClass>(lcbClasses.CMB);
+                cls = ModelDbSet.GetSelectedModel<SchoolClass>(lcbClasses.CMB);
+                return cls;
             }
             set
             {
-                cls = (SchoolClass)value;
+                if (value != null && value.GetType() == typeof(SchoolClass))
+                {
+                    cls = (SchoolClass)value;
+                    if (cls.SchoolId != Guid.Empty)
+                    {
+                        labSchools.ButtonVisible = false;
+                        bindClasses(cls.SchoolId);
+                    }
+                    else
+                    {
+                        labSchools.ButtonVisible = true;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 当不希望用户选择学校时，请提供一个学校ID。
+        /// </summary>
+        [Browsable(false), EditorBrowsable(EditorBrowsableState.Always)]
+        public Guid FixedSchoolId
+        {
+            get { return fixSchId; }
+            set
+            {
+                if (value != Guid.Empty)
+                {
+                    fixSchId = value;
+                    this.labSchools.ButtonVisible = false;
+                    bindClasses(fixSchId);
+                }
             }
         }
 
         public frmClassSelector()
         {
             InitializeComponent();
-            labSchools.btnSelect.Click += new EventHandler(selectSchool);
+            ModelDbSet.BindComboBoxByInts(lcbPeriods.CMB, DateTime.Now.Year - 3, DateTime.Now.Year + 3, DateTime.Now.Year);
         }
 
         private void frmClassSelector_FormClosing(object sender, FormClosingEventArgs e)

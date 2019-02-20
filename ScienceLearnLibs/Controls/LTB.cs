@@ -113,11 +113,11 @@ namespace LearnLibs.Controls
         {
             if (!string.IsNullOrWhiteSpace(PlaceHolder) && TB.Text == PlaceHolder)
             {
-                this.ForeColor = holderColor;
+                this.TB.ForeColor = holderColor;
             }
             else
             {
-                this.ForeColor = defaultForeColor;
+                this.TB.ForeColor = defaultForeColor;
             }
         }
 
@@ -144,7 +144,8 @@ namespace LearnLibs.Controls
                 TB.Text = PlaceHolder;
                 TB.ForeColor = holderColor;
             }
-            else {
+            else
+            {
                 TB.ForeColor = defaultForeColor;
             }
         }

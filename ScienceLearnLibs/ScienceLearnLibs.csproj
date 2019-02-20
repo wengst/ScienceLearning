@@ -89,6 +89,12 @@
     <Compile Include="Controls\frmPress.Designer.cs">
       <DependentUpon>frmPress.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmQuestionEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmQuestionEditor.Designer.cs">
+      <DependentUpon>frmQuestionEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\frmRegister.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -125,11 +131,29 @@
     <Compile Include="Controls\frmStandard.Designer.cs">
       <DependentUpon>frmStandard.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\frmSubjectEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmSubjectEditor.Designer.cs">
+      <DependentUpon>frmSubjectEditor.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\frmTeachBook.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Controls\frmTeachBook.Designer.cs">
       <DependentUpon>frmTeachBook.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmTeachingDetailEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmTeachingDetailEditor.Designer.cs">
+      <DependentUpon>frmTeachingDetailEditor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\frmTeachingEditor.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Controls\frmTeachingEditor.Designer.cs">
+      <DependentUpon>frmTeachingEditor.cs</DependentUpon>
     </Compile>
     <Compile Include="Controls\frmTeachings.cs">
       <SubType>Form</SubType>
@@ -173,6 +197,12 @@
     <Compile Include="Controls\LTB.Designer.cs">
       <DependentUpon>LTB.cs</DependentUpon>
     </Compile>
+    <Compile Include="Controls\LTN.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="Controls\LTN.Designer.cs">
+      <DependentUpon>LTN.cs</DependentUpon>
+    </Compile>
     <Compile Include="Controls\SelectRoles.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -215,6 +245,9 @@
     <EmbeddedResource Include="Controls\frmPress.resx">
       <DependentUpon>frmPress.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmQuestionEditor.resx">
+      <DependentUpon>frmQuestionEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmRegister.resx">
       <DependentUpon>frmRegister.cs</DependentUpon>
     </EmbeddedResource>
@@ -236,6 +269,12 @@
     <EmbeddedResource Include="Controls\frmTeachBook.resx">
       <DependentUpon>frmTeachBook.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmTeachingDetailEditor.resx">
+      <DependentUpon>frmTeachingDetailEditor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\frmTeachingEditor.resx">
+      <DependentUpon>frmTeachingEditor.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Controls\frmTeachings.resx">
       <DependentUpon>frmTeachings.cs</DependentUpon>
     </EmbeddedResource>
@@ -256,6 +295,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\LTB.resx">
       <DependentUpon>LTB.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Controls\LTN.resx">
+      <DependentUpon>LTN.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Controls\SelectRoles.resx">
       <DependentUpon>SelectRoles.cs</DependentUpon>
